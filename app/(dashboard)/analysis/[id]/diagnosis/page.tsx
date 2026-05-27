@@ -1,23 +1,16 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { getAnalysisForUser } from '@/lib/supabase/get-analysis'
 import { Brain, CheckCircle, Lightbulb, Target, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import type { Analysis } from '@/types'
 
 export default async function DiagnosisPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) notFound()
+  const analysis = await getAnalysisForUser(id)
 
-  const admin = createAdminClient()
-  const { data: analysis } = await admin
-    .from('analyses').select('*').eq('id', id).eq('user_id', user.id).single()
+  if (!analysis || !(analysis as unknown as Analysis).result) notFound()
 
-  if (!analysis || !(analysis as Analysis).result) notFound()
-
-  const result = (analysis as Analysis).result!
+  const result = (analysis as unknown as Analysis).result!
   const { diagnosis, bottlenecks, risks } = result
 
   return (

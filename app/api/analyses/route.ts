@@ -8,13 +8,25 @@ export async function GET() {
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role, organization_id')
+    .eq('id', user.id)
+    .single()
+
   const admin = createAdminClient()
-  const { data, error } = await admin
+  let query = admin
     .from('analyses')
-    .select('id, title, status, created_at, files, error_message')
-    .eq('user_id', user.id)
+    .select('id, title, status, created_at, files, error_message, user_id')
     .order('created_at', { ascending: false })
 
+  if (profile?.role === 'gestor' && profile.organization_id) {
+    query = query.eq('organization_id', profile.organization_id)
+  } else {
+    query = query.eq('user_id', user.id)
+  }
+
+  const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json(data)

@@ -12,14 +12,22 @@ export async function GET(
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const admin = createAdminClient()
-  const { data, error } = await admin
-    .from('analyses')
-    .select('*')
-    .eq('id', id)
-    .eq('user_id', user.id)
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role, organization_id')
+    .eq('id', user.id)
     .single()
 
+  const admin = createAdminClient()
+  let query = admin.from('analyses').select('*').eq('id', id)
+
+  if (profile?.role === 'gestor' && profile.organization_id) {
+    query = query.eq('organization_id', profile.organization_id)
+  } else {
+    query = query.eq('user_id', user.id)
+  }
+
+  const { data, error } = await query.single()
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
 
   return NextResponse.json(data)

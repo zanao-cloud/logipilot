@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Truck, Phone, Star, TrendingUp, ChevronRight, Users, CheckCircle, MapPin } from 'lucide-react'
+import {
+  Truck, Phone, Star, TrendingUp, ChevronRight,
+  Users, CheckCircle, MapPin, Calendar, UserPlus,
+} from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { formatDate } from '@/lib/utils'
 
 interface Motorista {
   id: string
@@ -23,6 +27,12 @@ function getKpis(id: string, period: 'hoje' | 'semana' | 'mes') {
   }[period]
 }
 
+function getStatusColor(pontualidade: number) {
+  if (pontualidade >= 90) return { dot: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', label: 'Excelente' }
+  if (pontualidade >= 75) return { dot: 'bg-amber-400', text: 'text-amber-700', bg: 'bg-amber-50', label: 'Regular' }
+  return { dot: 'bg-red-400', text: 'text-red-700', bg: 'bg-red-50', label: 'Atenção' }
+}
+
 export default function MotoristasPage() {
   const [motoristas, setMotoristas] = useState<Motorista[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,6 +45,7 @@ export default function MotoristasPage() {
         setMotoristas((data || []).filter((m: { role: string }) => m.role === 'motorista'))
         setLoading(false)
       })
+      .catch(() => setLoading(false))
   }, [])
 
   const kpis = motoristas.map(m => ({ ...m, kpi: getKpis(m.id, period) }))
@@ -44,11 +55,20 @@ export default function MotoristasPage() {
 
   return (
     <div className="p-8 max-w-5xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Supervisão de Motoristas</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Acompanhe o desempenho individual de cada motorista da sua frota
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Supervisão de Motoristas</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Acompanhe o desempenho e as informações de cada motorista da sua frota
+          </p>
+        </div>
+        <Link
+          href="/dashboard/equipe"
+          className="flex items-center gap-2 bg-[#1E3A5F] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-[#162d4a] transition-colors"
+        >
+          <UserPlus className="w-4 h-4" />
+          Adicionar motorista
+        </Link>
       </div>
 
       {/* Period tabs */}
@@ -70,10 +90,10 @@ export default function MotoristasPage() {
       {!loading && motoristas.length > 0 && (
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
-            { icon: Users,       label: 'Motoristas',      value: motoristas.length, suffix: '',   color: 'text-blue-600 bg-blue-50' },
-            { icon: CheckCircle, label: 'Pont. média',      value: avgPont,           suffix: '%',  color: 'text-emerald-600 bg-emerald-50' },
-            { icon: Truck,       label: 'Total entregas',   value: totalEntregas,     suffix: '',   color: 'text-amber-600 bg-amber-50' },
-            { icon: MapPin,      label: 'KM total',         value: totalKm,           suffix: ' km', color: 'text-purple-600 bg-purple-50' },
+            { icon: Users,       label: 'Motoristas',    value: motoristas.length, suffix: '',    color: 'text-blue-600 bg-blue-50' },
+            { icon: CheckCircle, label: 'Pont. média',    value: avgPont,           suffix: '%',   color: 'text-emerald-600 bg-emerald-50' },
+            { icon: Truck,       label: 'Total entregas', value: totalEntregas,     suffix: '',    color: 'text-amber-600 bg-amber-50' },
+            { icon: MapPin,      label: 'KM total',       value: totalKm,           suffix: ' km', color: 'text-purple-600 bg-purple-50' },
           ].map(s => (
             <Card key={s.label}>
               <CardContent className="flex items-center gap-3 py-4">
@@ -93,7 +113,7 @@ export default function MotoristasPage() {
       {/* Motoristas list */}
       {loading ? (
         <div className="space-y-3">
-          {[1,2,3].map(i => <div key={i} className="h-28 bg-white rounded-2xl animate-pulse border border-slate-100" />)}
+          {[1,2,3].map(i => <div key={i} className="h-36 bg-white rounded-2xl animate-pulse border border-slate-100" />)}
         </div>
       ) : motoristas.length === 0 ? (
         <Card>
@@ -113,12 +133,13 @@ export default function MotoristasPage() {
             .map((m, rank) => {
               const stars = Math.round(m.kpi.pontualidade / 20)
               const progress = Math.min(100, (m.kpi.entregas / m.kpi.meta) * 100)
+              const status = getStatusColor(m.kpi.pontualidade)
               return (
                 <Link key={m.id} href={`/dashboard/motoristas/${m.id}`}>
                   <div className="bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-md hover:border-slate-200 transition-all group">
-                    <div className="flex items-center gap-4">
-                      {/* Rank + avatar */}
-                      <div className="flex-shrink-0 flex flex-col items-center gap-1">
+                    <div className="flex items-start gap-4">
+                      {/* Rank badge */}
+                      <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
                           rank === 0 ? 'bg-amber-400 text-white' :
                           rank === 1 ? 'bg-slate-300 text-slate-700' :
@@ -129,20 +150,37 @@ export default function MotoristasPage() {
                         </div>
                       </div>
 
-                      {/* Info */}
+                      {/* Driver info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-slate-800">{m.full_name}</p>
-                          {m.vehicle_plate && (
-                            <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-mono">
+                        {/* Name + status */}
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <p className="font-semibold text-slate-800 text-base">{m.full_name}</p>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${status.bg} ${status.text}`}>
+                            {status.label}
+                          </span>
+                        </div>
+
+                        {/* Driver details row */}
+                        <div className="flex items-center gap-4 mb-2 flex-wrap">
+                          {m.vehicle_plate ? (
+                            <span className="flex items-center gap-1.5 text-xs bg-[#1E3A5F]/5 border border-[#1E3A5F]/10 text-[#1E3A5F] px-2.5 py-1 rounded-full font-mono font-medium">
+                              <Truck className="w-3 h-3" />
                               {m.vehicle_plate}
                             </span>
+                          ) : (
+                            <span className="text-xs text-slate-300 italic">Sem placa cadastrada</span>
                           )}
-                          {m.phone && (
-                            <span className="text-xs text-slate-400 flex items-center gap-1">
+                          {m.phone ? (
+                            <span className="flex items-center gap-1 text-xs text-slate-500">
                               <Phone className="w-3 h-3" />{m.phone}
                             </span>
+                          ) : (
+                            <span className="text-xs text-slate-300 italic">Sem telefone</span>
                           )}
+                          <span className="flex items-center gap-1 text-xs text-slate-400">
+                            <Calendar className="w-3 h-3" />
+                            Cadastro: {formatDate(m.created_at)}
+                          </span>
                         </div>
 
                         {/* Stars */}
@@ -167,14 +205,14 @@ export default function MotoristasPage() {
                         </div>
                       </div>
 
-                      {/* KPIs */}
-                      <div className="flex items-center gap-6 flex-shrink-0">
+                      {/* KPI metrics */}
+                      <div className="flex items-center gap-5 flex-shrink-0">
                         <div className="text-center">
                           <p className="text-xl font-bold text-slate-800">{m.kpi.entregas}</p>
                           <p className="text-xs text-slate-400">Entregas</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-xl font-bold text-emerald-600">{m.kpi.pontualidade}%</p>
+                          <p className={`text-xl font-bold ${status.text}`}>{m.kpi.pontualidade}%</p>
                           <p className="text-xs text-slate-400">Pontual.</p>
                         </div>
                         <div className="text-center">
@@ -185,7 +223,7 @@ export default function MotoristasPage() {
                           <p className="text-xl font-bold text-purple-600">{Math.round((m.kpi.entregas / m.kpi.meta) * 100)}%</p>
                           <p className="text-xs text-slate-400">Meta</p>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors ml-1" />
                       </div>
                     </div>
                   </div>
@@ -195,11 +233,16 @@ export default function MotoristasPage() {
         </div>
       )}
 
-      {/* Legend */}
       {motoristas.length > 0 && (
-        <p className="text-xs text-slate-400 text-center mt-6">
-          Classificados por pontualidade · Clique em um motorista para ver o detalhamento completo
-        </p>
+        <div className="flex items-center justify-between mt-6">
+          <p className="text-xs text-slate-400">
+            Classificados por pontualidade · Clique em um motorista para ver o detalhamento completo
+          </p>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <TrendingUp className="w-3.5 h-3.5" />
+            KPIs estimados para fins de visualização
+          </div>
+        </div>
       )}
     </div>
   )

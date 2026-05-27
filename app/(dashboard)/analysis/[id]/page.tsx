@@ -10,15 +10,23 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
 
-  const admin = createAdminClient()
-  const { data: analysis } = await admin
-    .from('analyses')
-    .select('*')
-    .eq('id', id)
-    .eq('user_id', user.id)
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role, organization_id')
+    .eq('id', user.id)
     .single()
 
+  const admin = createAdminClient()
+  let query = admin.from('analyses').select('*').eq('id', id)
+
+  if (profile?.role === 'gestor' && profile.organization_id) {
+    query = query.eq('organization_id', profile.organization_id)
+  } else {
+    query = query.eq('user_id', user.id)
+  }
+
+  const { data: analysis } = await query.single()
   if (!analysis) notFound()
 
-  return <ExecutiveSummaryView analysis={analysis as Analysis} />
+  return <ExecutiveSummaryView analysis={analysis as unknown as Analysis} />
 }

@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { getAnalysisForUser } from '@/lib/supabase/get-analysis'
 import { Target, Clock, Zap, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,17 +7,11 @@ import type { Analysis, ActionItem } from '@/types'
 
 export default async function ActionPlanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) notFound()
+  const analysis = await getAnalysisForUser(id)
 
-  const admin = createAdminClient()
-  const { data: analysis } = await admin
-    .from('analyses').select('*').eq('id', id).eq('user_id', user.id).single()
+  if (!analysis || !(analysis as unknown as Analysis).result) notFound()
 
-  if (!analysis || !(analysis as Analysis).result) notFound()
-
-  const { action_plan, opportunities } = (analysis as Analysis).result!
+  const { action_plan, opportunities } = (analysis as unknown as Analysis).result!
 
   const byCategory = {
     immediate: action_plan.filter(a => a.category === 'immediate'),

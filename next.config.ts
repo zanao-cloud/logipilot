@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '25mb',
     },
   },
+  serverExternalPackages: ['xlsx', 'pdf-parse', 'mammoth', 'jszip'],
 }
 
 export default nextConfig

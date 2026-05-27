@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { analyzeData } from '@/lib/ai/analyze'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import * as XLSX from 'xlsx'
-import type { AnalysisResult } from '@/types'
+import type * as XLSXType from 'xlsx'
+import type { AnalysisResult, Chart } from '@/types'
 
 export const maxDuration = 60
 
@@ -24,58 +24,74 @@ interface ParsedAIFile {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const admin = createAnalysisAdminClient()
-
-  const formData = await request.formData()
-  const title = formData.get('title') as string
-  const context = formData.get('context') as string
-  const analysisMode = formData.get('analysisMode') === 'local' ? 'local' : 'ai'
-  const files = formData.getAll('files') as File[]
-
-  if (!files.length) {
-    return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
-  }
-
-  const totalBytes = files.reduce((sum, file) => sum + file.size, 0)
-  if (totalBytes > MAX_TOTAL_UPLOAD_BYTES) {
-    return NextResponse.json({
-      error: 'Arquivos muito grandes para uma única análise. Envie menos arquivos ou reduza a planilha.',
-    }, { status: 413 })
-  }
-
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  const { data: analysis, error: insertError } = await admin
-    .from('analyses')
-    .insert({
-      user_id: user.id,
-      organization_id: profile?.organization_id ?? null,
-      title: title || 'Análise sem título',
-      status: 'processing',
-      files: files.map(f => ({ name: f.name, type: f.type, size: f.size })),
-    })
-    .select()
-    .single()
-
-  if (insertError) {
-    console.error('[analyze] insert failed', insertError.message)
-    return NextResponse.json({ error: friendlyDatabaseError(insertError.message) }, { status: 500 })
-  }
-
-  let parsedFiles: ParsedAIFile[] = []
+  // Top-level try-catch ensures every error returns JSON, never drops the connection.
+  let admin: ReturnType<typeof createAnalysisAdminClient> | null = null
+  let analysisId: string | null = null
 
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    admin = createAnalysisAdminClient()
+
+    let formData: FormData
+    try {
+      formData = await request.formData()
+    } catch {
+      return NextResponse.json(
+        { error: 'Falha ao ler o arquivo enviado. Verifique o tamanho e o formato e tente novamente.' },
+        { status: 400 },
+      )
+    }
+
+    const title = formData.get('title') as string
+    const context = formData.get('context') as string
+    const analysisMode = formData.get('analysisMode') === 'local' ? 'local' : 'ai'
+    const files = formData.getAll('files') as File[]
+
+    if (!files.length) {
+      return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
+    }
+
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0)
+    if (totalBytes > MAX_TOTAL_UPLOAD_BYTES) {
+      return NextResponse.json({
+        error: 'Arquivos muito grandes para uma única análise. Envie menos arquivos ou reduza a planilha.',
+      }, { status: 413 })
+    }
+
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('organization_id')
+      .eq('id', user.id)
+      .single()
+
+    const { data: analysis, error: insertError } = await admin
+      .from('analyses')
+      .insert({
+        user_id: user.id,
+        organization_id: profile?.organization_id ?? null,
+        title: title || 'Análise sem título',
+        status: 'processing',
+        files: files.map(f => ({ name: f.name, type: f.type, size: f.size })),
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('[analyze] insert failed', insertError.message)
+      return NextResponse.json({ error: friendlyDatabaseError(insertError.message) }, { status: 500 })
+    }
+
+    analysisId = analysis.id
+
+    let parsedFiles: ParsedAIFile[] = []
+
+    try {
     parsedFiles = await Promise.all(files.map(parseFileForAI))
 
     if (analysisMode === 'local') {
@@ -137,6 +153,24 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: message }, { status: 500 })
+    }
+  } catch (outerErr) {
+    const msg = getErrorMessage(outerErr)
+    console.error('[analyze] outer error', msg)
+
+    if (admin && analysisId) {
+      try {
+        await admin
+          .from('analyses')
+          .update({ status: 'error', error_message: 'Erro inesperado ao processar a análise.', updated_at: new Date().toISOString() })
+          .eq('id', analysisId)
+      } catch { /* best-effort */ }
+    }
+
+    return NextResponse.json(
+      { error: friendlyError(msg) || 'Erro inesperado ao processar a análise. Tente novamente.' },
+      { status: 500 },
+    )
   }
 }
 
@@ -198,7 +232,7 @@ function friendlyError(msg: string): string {
     return 'Tempo limite excedido. Tente com arquivos menores ou menos arquivos.'
   }
   if (m.includes('fetch failed') || m.includes('network') || m.includes('enotfound') || m.includes('etimedout')) {
-    return 'Não consegui conectar à API de IA. Verifique a conexão/chave do Gemini e tente novamente.'
+    return 'Não consegui conectar à API de IA. Verifique a conexão e a chave da API e tente novamente.'
   }
   if (m.includes('json') || m.includes('parse')) {
     return 'A IA não conseguiu processar os dados. Tente novamente.'
@@ -246,12 +280,12 @@ async function parseFileForAI(file: File): Promise<ParsedAIFile> {
 
   if (ext === 'xlsx' || ext === 'xls' || type.includes('spreadsheet')) {
     const buffer = await file.arrayBuffer()
-    return { name, type, content: parseWorkbook(buffer, name) }
+    return { name, type, content: await parseWorkbook(buffer, name) }
   }
 
   if (ext === 'csv' || type === 'text/csv') {
     const text = await file.text()
-    return { name, type, content: parseCsv(text, name) }
+    return { name, type, content: await parseCsv(text, name) }
   }
 
   const text = await file.text().catch(() => `[Arquivo binário: ${name}]`)
@@ -331,7 +365,8 @@ async function parsePptx(buffer: ArrayBuffer, fileName: string): Promise<string>
   }
 }
 
-function parseWorkbook(buffer: ArrayBuffer, fileName: string): string {
+async function parseWorkbook(buffer: ArrayBuffer, fileName: string): Promise<string> {
+  const XLSX = await import('xlsx')
   try {
     const workbook = XLSX.read(new Uint8Array(buffer), {
       type: 'array',
@@ -340,17 +375,17 @@ function parseWorkbook(buffer: ArrayBuffer, fileName: string): string {
       cellDates: true,
       raw: false,
     })
-
-    return workbookToAnalysisText(workbook, fileName)
+    return workbookToAnalysisText(XLSX, workbook, fileName)
   } catch {
     throw new Error(`Não consegui ler a planilha "${fileName}". Verifique se o arquivo não está corrompido ou exporte novamente em XLSX/CSV.`)
   }
 }
 
-function parseCsv(csv: string, fileName: string): string {
+async function parseCsv(csv: string, fileName: string): Promise<string> {
+  const XLSX = await import('xlsx')
   try {
     const workbook = XLSX.read(csv, { type: 'string', raw: false })
-    return workbookToAnalysisText(workbook, fileName)
+    return workbookToAnalysisText(XLSX, workbook, fileName)
   } catch {
     const rows = csv.split(/\r?\n/).filter(Boolean)
     if (!rows.length) throw new Error(`Planilha vazia: "${fileName}".`)
@@ -358,7 +393,7 @@ function parseCsv(csv: string, fileName: string): string {
   }
 }
 
-function workbookToAnalysisText(workbook: XLSX.WorkBook, fileName: string): string {
+function workbookToAnalysisText(XLSX: typeof XLSXType, workbook: XLSXType.WorkBook, fileName: string): string {
   if (!workbook.SheetNames.length) {
     throw new Error(`Planilha vazia: "${fileName}".`)
   }
@@ -406,13 +441,13 @@ function workbookToAnalysisText(workbook: XLSX.WorkBook, fileName: string): stri
       defval: '',
       raw: false,
       blankrows: false,
-    }).filter(row => row.some(cell => String(cell).trim() !== ''))
+    }).filter(row => (row as unknown[]).some(cell => String(cell).trim() !== ''))
 
     parts.push([
       `\n=== Aba: ${sheetName} ===`,
       `Dimensões: ${totalRows} linhas x ${totalCols} colunas`,
       `Amostra (${Math.min(arrayRows.length, MAX_ROWS_PER_SHEET)} de ${arrayRows.length} linhas):`,
-      arrayRows.slice(0, MAX_ROWS_PER_SHEET).map(row => row.map(formatCell).join('\t')).join('\n'),
+      arrayRows.slice(0, MAX_ROWS_PER_SHEET).map(row => (row as unknown[]).map(formatCell).join('\t')).join('\n'),
       arrayRows.length > MAX_ROWS_PER_SHEET ? `... ${arrayRows.length - MAX_ROWS_PER_SHEET} linhas adicionais omitidas nesta aba.` : '',
     ].filter(Boolean).join('\n'))
   }
@@ -477,17 +512,23 @@ function decodeXmlEntities(value: string): string {
 }
 
 function createLocalAnalysis(files: ParsedAIFile[], userContext?: string, aiUnavailable = false): AnalysisResult {
-  const spreadsheetFiles = files.filter(file => isSpreadsheetLike(file))
-  const pdfFiles = files.filter(file => file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf')
-  const presentationFiles = files.filter(file => file.name.toLowerCase().endsWith('.pptx') || file.type.includes('presentation'))
-  const documentFiles = files.filter(file => file.name.toLowerCase().endsWith('.docx') || file.type.includes('wordprocessingml'))
-  const imageFiles = files.filter(file => file.type.startsWith('image/'))
-  const rows = spreadsheetFiles.reduce((sum, file) => sum + estimateRows(file.content), 0)
-  const sheets = spreadsheetFiles.reduce((sum, file) => sum + estimateSheets(file.content), 0)
-  const slideCount = presentationFiles.reduce((sum, file) => sum + estimateSlides(file.content), 0)
-  const textLength = files.reduce((sum, file) => sum + file.content.length, 0)
-  const truncated = files.some(file => file.content.includes('[Conteúdo truncado') || file.content.includes('[Texto truncado'))
-  const dataSources = files.map(file => file.name)
+  const spreadsheetFiles = files.filter(isSpreadsheetLike)
+  const pdfFiles = files.filter(f => f.name.toLowerCase().endsWith('.pdf') || f.type === 'application/pdf')
+  const presentationFiles = files.filter(f => f.name.toLowerCase().endsWith('.pptx') || f.type.includes('presentation'))
+  const documentFiles = files.filter(f => f.name.toLowerCase().endsWith('.docx') || f.type.includes('wordprocessingml'))
+  const imageFiles = files.filter(f => f.type.startsWith('image/'))
+  const truncated = files.some(f => f.content.includes('[Conteúdo truncado') || f.content.includes('[Texto truncado'))
+  const dataSources = files.map(f => f.name)
+
+  // Parse actual spreadsheet structure for real indicators
+  const allSheets = spreadsheetFiles.flatMap(f => parseSheetData(f))
+  const totalRows = allSheets.reduce((s, sh) => s + sh.totalRows, 0)
+  const totalSheets = allSheets.length
+  const allColumns = allSheets.flatMap(sh => sh.columns)
+  const allNumericCols = allSheets.flatMap(sh => sh.numericCols)
+  const slideCount = presentationFiles.reduce((s, f) => s + estimateSlides(f.content), 0)
+  const textLength = files.reduce((s, f) => s + f.content.length, 0)
+
   const supportedKinds = [
     spreadsheetFiles.length ? `${spreadsheetFiles.length} planilha(s)` : '',
     pdfFiles.length ? `${pdfFiles.length} PDF(s)` : '',
@@ -495,147 +536,290 @@ function createLocalAnalysis(files: ParsedAIFile[], userContext?: string, aiUnav
     documentFiles.length ? `${documentFiles.length} documento(s)` : '',
     imageFiles.length ? `${imageFiles.length} imagem(ns)` : '',
   ].filter(Boolean).join(', ')
-  const highlights = [
+
+  // Build highlights from actual data
+  const highlights: string[] = [
     `${files.length} arquivo${files.length === 1 ? '' : 's'} recebido${files.length === 1 ? '' : 's'} para análise.`,
-    supportedKinds ? `Tipos lidos localmente: ${supportedKinds}.` : 'Os arquivos foram recebidos, mas não há formato com extração local avançada.',
-    spreadsheetFiles.length > 0 ? `${sheets} aba${sheets === 1 ? '' : 's'} e aproximadamente ${rows} linha${rows === 1 ? '' : 's'} de dados tabulares.` : '',
-    presentationFiles.length > 0 ? `${slideCount} slide${slideCount === 1 ? '' : 's'} com texto extraído de PPTX.` : '',
+    supportedKinds ? `Tipos identificados: ${supportedKinds}.` : 'Os arquivos foram recebidos, mas sem formato de extração local avançada.',
+  ]
+  if (allSheets.length > 0) {
+    highlights.push(`${totalSheets} aba${totalSheets === 1 ? '' : 's'} lida${totalSheets === 1 ? '' : 's'} com ${totalRows > 0 ? `${totalRows} linha${totalRows === 1 ? '' : 's'} de dados` : 'estrutura detectada'}.`)
+    if (allColumns.length > 0) {
+      const uniqueCols = [...new Set(allColumns)].slice(0, 8)
+      highlights.push(`Colunas encontradas: ${uniqueCols.join(', ')}${allColumns.length > 8 ? ` e mais ${allColumns.length - 8}` : ''}.`)
+    }
+    if (allNumericCols.length > 0) {
+      highlights.push(`${allNumericCols.length} coluna${allNumericCols.length === 1 ? '' : 's'} numérica${allNumericCols.length === 1 ? '' : 's'} detectada${allNumericCols.length === 1 ? '' : 's'}: ${allNumericCols.slice(0, 4).map(c => c.name).join(', ')}.`)
+    }
+  }
+  if (presentationFiles.length > 0) highlights.push(`${slideCount} slide${slideCount === 1 ? '' : 's'} com texto extraído.`)
+  highlights.push(
     aiUnavailable
-      ? 'A análise foi concluída em modo básico porque a API de IA não respondeu no momento do processamento.'
-      : 'A análise foi concluída localmente, sem consumo de tokens de API.',
+      ? 'Análise concluída em modo básico — a API de IA estava indisponível no momento do processamento.'
+      : 'Análise concluída localmente, sem consumo de créditos de IA.',
+  )
+
+  // Build real numeric indicators from the data
+  const numericIndicators = allNumericCols.slice(0, 3).map(col => ({
+    name: col.name,
+    value: Math.round(col.sum * 100) / 100,
+    unit: '',
+    trend: 'stable' as const,
+    trend_value: `Mín: ${formatNumber(col.min)} | Máx: ${formatNumber(col.max)} | Média: ${formatNumber(col.avg)}`,
+    category: 'Planilha',
+    status: 'neutral' as const,
+  }))
+
+  const indicators = [
+    ...numericIndicators,
+    {
+      name: spreadsheetFiles.length > 0 ? 'Linhas de dados' : 'Arquivos processados',
+      value: spreadsheetFiles.length > 0 ? (totalRows || files.length) : files.length,
+      unit: spreadsheetFiles.length > 0 ? 'linha(s)' : 'arquivo(s)',
+      trend: 'stable' as const,
+      trend_value: truncated ? 'Amostra parcial (conteúdo truncado)' : 'Leitura completa',
+      category: 'Volume',
+      status: (totalRows > 0 || files.length > 0) ? 'good' as const : 'warning' as const,
+    },
+    {
+      name: 'Colunas mapeadas',
+      value: [...new Set(allColumns)].length || files.length,
+      unit: [...new Set(allColumns)].length > 0 ? 'coluna(s)' : 'arquivo(s)',
+      trend: 'stable' as const,
+      trend_value: [...new Set(allColumns)].length > 0
+        ? `${allNumericCols.length} numérica${allNumericCols.length !== 1 ? 's' : ''}`
+        : supportedKinds || 'Sem colunas detectadas',
+      category: 'Estrutura',
+      status: [...new Set(allColumns)].length > 0 ? 'good' as const : 'neutral' as const,
+    },
+  ]
+
+  // Build charts: prefer real numeric data over just file type counts
+  const charts: Chart[] = []
+  if (allNumericCols.length >= 2) {
+    charts.push({
+      id: 'local-numeric-totals',
+      title: `Totais por coluna numérica`,
+      type: 'bar',
+      data: allNumericCols.slice(0, 8).map(c => ({ label: c.name, value: Math.round(c.sum * 100) / 100 })),
+      x_key: 'label',
+      y_keys: ['value'],
+      colors: ['#1E3A5F'],
+    })
+    charts.push({
+      id: 'local-numeric-avg',
+      title: 'Médias por coluna numérica',
+      type: 'bar',
+      data: allNumericCols.slice(0, 8).map(c => ({ label: c.name, value: Math.round(c.avg * 100) / 100 })),
+      x_key: 'label',
+      y_keys: ['value'],
+      colors: ['#059669'],
+    })
+  } else {
+    charts.push({
+      id: 'local-files',
+      title: 'Arquivos por tipo',
+      type: 'bar',
+      data: countByType(files),
+      x_key: 'label',
+      y_keys: ['value'],
+      colors: ['#1E3A5F'],
+    })
+  }
+
+  const uniqueCols = [...new Set(allColumns)]
+  const diagnosisFacts = [
+    `Fontes analisadas: ${dataSources.join(', ') || 'nenhuma'}.`,
+    supportedKinds ? `Formatos lidos: ${supportedKinds}.` : 'Nenhum formato com extração avançada foi identificado.',
+    allSheets.length > 0
+      ? `${totalSheets} aba${totalSheets !== 1 ? 's' : ''} com ${totalRows > 0 ? `${totalRows} linha${totalRows !== 1 ? 's' : ''} de dados` : 'estrutura detectada'}.`
+      : `${textLength.toLocaleString('pt-BR')} caracteres de conteúdo preparados para análise.`,
+    uniqueCols.length > 0
+      ? `Colunas identificadas: ${uniqueCols.slice(0, 10).join(', ')}${uniqueCols.length > 10 ? ` (+${uniqueCols.length - 10})` : ''}.`
+      : '',
+    allNumericCols.length > 0
+      ? `Colunas numéricas: ${allNumericCols.map(c => `${c.name} (total: ${formatNumber(c.sum)}, média: ${formatNumber(c.avg)})`).slice(0, 5).join('; ')}.`
+      : '',
   ].filter(Boolean)
 
   return {
     executive_summary: {
-      title: aiUnavailable ? 'Análise básica dos arquivos enviados' : 'Análise local dos arquivos enviados',
+      title: aiUnavailable ? 'Análise básica dos arquivos enviados' : 'Análise estrutural dos dados',
       overview: aiUnavailable
-        ? 'Os arquivos foram lidos e estruturados com sucesso, mas a etapa de IA ficou indisponível por falha de conexão. Esta visão resume o que foi possível identificar localmente a partir da estrutura dos dados.'
-        : 'Os arquivos foram lidos e estruturados localmente, sem chamada a APIs de IA. Esta visão resume a estrutura dos dados, volumes identificados e pontos objetivos que podem ser calculados sem tokens.',
+        ? 'Os arquivos foram lidos com sucesso, mas a etapa de IA ficou indisponível por falha de conexão. Esta visão resume a estrutura dos dados identificada localmente.'
+        : allSheets.length > 0
+          ? `A planilha foi lida e estruturada localmente. Foram encontradas ${totalSheets} aba${totalSheets !== 1 ? 's' : ''} com ${totalRows > 0 ? `${totalRows} linha${totalRows !== 1 ? 's' : ''} de dados` : 'estrutura detectada'} e ${uniqueCols.length} coluna${uniqueCols.length !== 1 ? 's' : ''}${allNumericCols.length > 0 ? `, incluindo ${allNumericCols.length} numérica${allNumericCols.length !== 1 ? 's' : ''}` : ''}. Para diagnóstico estratégico e recomendações, use a análise com IA.`
+          : 'Os arquivos foram lidos e estruturados localmente. Esta visão cobre volume, tipos de arquivo e estrutura tabular — para interpretação semântica avançada, ative a análise com IA.',
       key_highlights: highlights,
       data_sources: dataSources,
     },
-    indicators: [
-      {
-        name: 'Arquivos processados',
-        value: files.length,
-        unit: 'arquivo(s)',
-        trend: 'stable',
-        trend_value: 'Processado localmente',
-        category: 'Processamento',
-        status: 'neutral',
-      },
-      {
-        name: 'Formatos com leitura local',
-        value: [spreadsheetFiles, pdfFiles, presentationFiles, documentFiles, imageFiles].filter(group => group.length > 0).length,
-        unit: 'tipo(s)',
-        trend: 'stable',
-        trend_value: supportedKinds || 'Sem extração avançada',
-        category: 'Dados',
-        status: supportedKinds ? 'good' : 'warning',
-      },
-      {
-        name: spreadsheetFiles.length > 0 ? 'Linhas estimadas' : 'Texto extraído',
-        value: spreadsheetFiles.length > 0 ? rows : textLength,
-        unit: spreadsheetFiles.length > 0 ? 'linha(s)' : 'caractere(s)',
-        trend: 'stable',
-        trend_value: truncated ? 'Conteúdo truncado' : 'Amostra completa dentro do limite',
-        category: 'Volume',
-        status: rows > 0 || textLength > 0 ? 'good' : 'warning',
-      },
-    ],
+    indicators,
     dashboard_data: {
       summary_cards: [
-        { title: 'Arquivos', value: String(files.length), trend: 'stable' },
-        { title: 'Planilhas', value: String(spreadsheetFiles.length), trend: 'stable' },
-        { title: 'PDF/PPTX/DOCX', value: String(pdfFiles.length + presentationFiles.length + documentFiles.length), trend: 'stable' },
-        { title: spreadsheetFiles.length > 0 ? 'Linhas estimadas' : 'Texto extraído', value: String(spreadsheetFiles.length > 0 ? rows : textLength), trend: 'stable' },
+        { title: 'Linhas', value: String(totalRows || files.length), trend: 'stable' },
+        { title: 'Colunas', value: String(uniqueCols.length || '-'), trend: 'stable' },
+        { title: 'Abas', value: String(totalSheets || spreadsheetFiles.length), trend: 'stable' },
+        { title: 'Numéricas', value: String(allNumericCols.length), trend: 'stable' },
       ],
-      charts: [
-        {
-          id: 'fallback-files',
-          title: 'Arquivos por tipo',
-          type: 'bar',
-          data: countByType(files),
-          x_key: 'label',
-          y_keys: ['value'],
-          colors: ['#1E3A5F'],
-        },
-      ],
+      charts,
     },
     diagnosis: {
       overall_assessment: aiUnavailable
-        ? 'A leitura estrutural dos arquivos funcionou, mas o diagnóstico inteligente não pôde ser gerado porque a conexão com a API de IA falhou. Reprocessar a análise quando a API estiver acessível deve gerar o diagnóstico completo.'
-        : 'A leitura estrutural dos arquivos funcionou em modo local. O diagnóstico sem IA cobre volume, tipos de arquivo e estrutura tabular, mas não interpreta contexto operacional avançado.',
-      health_score: aiUnavailable ? 50 : 65,
-      observed_facts: [
-        `Fontes recebidas: ${dataSources.join(', ') || 'nenhuma'}.`,
-        supportedKinds ? `Formatos processados localmente: ${supportedKinds}.` : 'Nenhum formato com extração local avançada foi identificado.',
-        rows > 0 ? `Aproximadamente ${rows} linha(s) de dados foram detectadas nas planilhas.` : `${textLength} caractere(s) de conteúdo/metadados foram preparados para análise local.`,
-      ],
+        ? 'A leitura estrutural funcionou, mas o diagnóstico inteligente não pôde ser gerado porque a conexão com a API de IA falhou. Reprocessar a análise quando a API estiver acessível gera o relatório completo.'
+        : allSheets.length > 0
+          ? `A planilha foi lida com sucesso em modo local. ${allNumericCols.length > 0 ? `As colunas numéricas (${allNumericCols.map(c => c.name).slice(0, 4).join(', ')}) foram calculadas automaticamente.` : 'Nenhuma coluna puramente numérica foi detectada na amostra.'} Para diagnóstico operacional avançado com gargalos, riscos e plano de ação, utilize a análise com IA.`
+          : 'Leitura estrutural concluída. O diagnóstico sem IA cobre volume e estrutura tabular, mas não interpreta o contexto operacional dos dados.',
+      health_score: aiUnavailable ? 50 : 70,
+      observed_facts: diagnosisFacts,
       hypotheses: [
         aiUnavailable
-          ? 'A falha ocorreu na chamada externa da IA, não na leitura inicial da planilha.'
-          : 'Os dados parecem adequados para uma análise estrutural local; recomendações estratégicas exigem regras de negócio específicas ou IA opcional.',
+          ? 'A falha ocorreu na chamada externa à API de IA, não na leitura da planilha — os dados estão intactos.'
+          : allNumericCols.length > 0
+            ? `Os valores numéricos parecem consistentes; totais e médias foram calculados automaticamente. Verificação de outliers e tendências requer análise com IA.`
+            : 'Os dados parecem textuais/categoriais. A análise com IA é recomendada para extrair padrões e insights relevantes.',
       ],
       recommendations: [
-        aiUnavailable ? 'Tente reprocessar a análise em alguns minutos.' : 'Use este modo para análises rápidas sem custo de tokens.',
-        aiUnavailable ? 'Se o erro persistir, valide a chave GEMINI_API_KEY e a conectividade do ambiente com a API do Gemini.' : 'Para diagnóstico estratégico, ative a análise completa com IA quando quiser.',
-        'Para planilhas grandes, envie uma versão filtrada com as abas e colunas mais importantes.',
+        aiUnavailable
+          ? 'Tente reprocessar a análise em alguns minutos quando a conexão com a API estiver estável.'
+          : 'Use o modo com IA para obter diagnóstico operacional, identificação de gargalos e plano de ação detalhado.',
+        aiUnavailable
+          ? 'Se o erro persistir, verifique a chave GROQ_API_KEY nas variáveis de ambiente.'
+          : uniqueCols.length > 0
+            ? `Certifique-se de que as colunas principais (${uniqueCols.slice(0, 4).join(', ')}) têm nomes claros para melhorar a análise com IA.`
+            : 'Envie planilhas com cabeçalhos claros para melhorar a detecção automática de colunas.',
+        truncated ? 'Parte do conteúdo foi truncada — envie a planilha em partes menores para análise completa.' : 'Para planilhas grandes, filtre pelas abas e colunas mais relevantes antes de enviar.',
       ],
-      priority_areas: aiUnavailable ? ['Conectividade com IA', 'Validação da planilha'] : ['Qualidade dos dados', 'Estrutura da planilha'],
+      priority_areas: aiUnavailable
+        ? ['Conectividade com API de IA', 'Validação da planilha']
+        : allNumericCols.length > 0
+          ? ['Colunas numéricas', 'Qualidade dos dados', 'Estrutura tabular']
+          : ['Estrutura da planilha', 'Qualidade dos dados'],
     },
     bottlenecks: aiUnavailable ? [
       {
-        title: 'IA indisponível no processamento',
-        description: 'A chamada externa para geração do diagnóstico falhou com erro de rede.',
+        title: 'API de IA indisponível',
+        description: 'A chamada à API de IA falhou com erro de rede durante o processamento.',
         severity: 'medium',
-        evidence: 'Erro interno: fetch failed.',
-        impact: 'O sistema gera apenas uma análise básica até a API de IA responder normalmente.',
+        evidence: 'Erro de conexão ao tentar chamar o modelo de linguagem.',
+        impact: 'O sistema gerou apenas a análise estrutural local até a API responder normalmente.',
       },
     ] : [],
     risks: [],
     inconsistencies: [],
     opportunities: [
       {
-        title: aiUnavailable ? 'Reprocessar com IA após estabilizar a conexão' : 'Evoluir regras locais por tipo de planilha',
+        title: aiUnavailable ? 'Reprocessar com IA após estabilizar a conexão' : 'Análise completa com IA',
         description: aiUnavailable
-          ? 'A estrutura da planilha já foi lida; uma nova tentativa pode gerar o relatório completo.'
-          : 'Mapear nomes de colunas recorrentes para gerar KPIs específicos de logística sem depender de IA.',
-        potential_impact: aiUnavailable ? 'Diagnóstico completo com indicadores, gargalos, riscos e plano de ação.' : 'Mais indicadores automáticos sem custo de API.',
+          ? 'A estrutura da planilha já foi lida com sucesso; uma nova tentativa deve gerar o relatório completo.'
+          : 'Envie esta mesma planilha usando o modo "Com IA" para obter diagnóstico estratégico, identificação de gargalos, riscos e plano de ação detalhado.',
+        potential_impact: aiUnavailable
+          ? 'Diagnóstico completo com indicadores, gargalos, riscos e plano de ação.'
+          : 'Insights operacionais avançados e recomendações acionáveis com base nos dados reais.',
         effort: 'low',
-        timeframe: aiUnavailable ? 'Imediato' : 'Curto prazo',
+        timeframe: aiUnavailable ? 'Imediato' : 'Imediato',
       },
     ],
     action_plan: [
       {
         priority: 1,
-        title: aiUnavailable ? 'Validar conexão com Gemini' : 'Padronizar colunas principais',
+        title: aiUnavailable ? 'Validar conexão com a API Groq' : 'Reprocessar com modo IA',
         description: aiUnavailable
-          ? 'Confirmar que GEMINI_API_KEY está válida e que o ambiente consegue acessar a API de IA.'
-          : 'Organizar a planilha com nomes claros para colunas de data, motorista, rota, status, valor, prazo e quantidade.',
+          ? 'Confirmar que GROQ_API_KEY está válida e que o ambiente consegue acessar a API do Groq (api.groq.com).'
+          : allSheets.length > 0
+            ? `A planilha foi lida com ${totalRows > 0 ? `${totalRows} linhas` : 'sucesso'}. Agora use o modo "Com IA" para obter o diagnóstico completo com base nestes dados.`
+            : 'Envie os arquivos pelo modo "Com IA" para obter análise completa com diagnóstico, gargalos e plano de ação.',
         deadline: aiUnavailable ? 'Hoje' : 'Próxima análise',
-        expected_result: aiUnavailable ? 'Análises completas voltam a ser geradas sem fallback.' : 'Mais KPIs locais identificados automaticamente.',
+        expected_result: aiUnavailable ? 'Análises completas voltam a ser geradas sem fallback.' : 'Relatório operacional completo com IA.',
         effort: 'low',
         category: 'immediate',
       },
       {
         priority: 2,
-        title: aiUnavailable ? 'Reenviar a planilha' : 'Usar IA apenas quando necessário',
+        title: aiUnavailable ? 'Reenviar a planilha' : 'Padronizar nomes das colunas',
         description: aiUnavailable
-          ? 'Executar uma nova análise com o mesmo arquivo após validar a conexão.'
-          : 'Rodar análise completa com IA somente para relatórios que precisam de interpretação e plano de ação detalhado.',
-        deadline: aiUnavailable ? 'Após validação da API' : 'Sob demanda',
-        expected_result: aiUnavailable ? 'Relatório operacional completo com IA.' : 'Controle de custo sem bloquear o uso do produto.',
+          ? 'Após validar a API, execute uma nova análise com o mesmo arquivo para gerar o diagnóstico completo.'
+          : uniqueCols.length > 0
+            ? `As colunas detectadas foram: ${uniqueCols.slice(0, 5).join(', ')}. Mantenha nomes padronizados para melhorar os KPIs automáticos em futuras análises.`
+            : 'Organize a planilha com cabeçalhos claros (data, motorista, rota, status, valor) para maximizar os KPIs automáticos.',
+        deadline: aiUnavailable ? 'Após validação da API' : 'Próxima análise',
+        expected_result: aiUnavailable ? 'Relatório operacional completo com IA.' : 'KPIs mais precisos e análise mais completa.',
         effort: 'low',
         category: 'short_term',
       },
     ],
     limitations: [
-      aiUnavailable ? 'Diagnóstico gerado em modo básico por indisponibilidade da API de IA.' : 'Diagnóstico gerado sem IA e sem consumo de tokens de API.',
-      userContext ? `Contexto informado pelo usuário: ${userContext}` : 'Nenhum contexto adicional foi informado pelo usuário.',
-      truncated ? 'Parte do conteúdo da planilha foi truncada para manter o processamento estável.' : 'A interpretação semântica completa dos dados depende de regras locais específicas ou da etapa opcional de IA.',
+      aiUnavailable
+        ? 'Diagnóstico gerado em modo básico por indisponibilidade temporária da API de IA (Groq/Llama).'
+        : 'Diagnóstico gerado sem IA — cobre estrutura e totais, mas não interpreta contexto operacional avançado.',
+      userContext ? `Contexto informado: ${userContext}` : 'Nenhum contexto adicional foi informado.',
+      truncated ? 'Parte do conteúdo da planilha foi truncada para manter o processamento estável.' : 'Análise completa dentro do limite de caracteres suportado.',
     ],
   }
+}
+
+interface SheetData {
+  name: string
+  columns: string[]
+  totalRows: number
+  numericCols: Array<{ name: string; sum: number; min: number; max: number; avg: number }>
+}
+
+function parseSheetData(file: ParsedAIFile): SheetData[] {
+  const content = file.content
+  const sheets: SheetData[] = []
+  const sections = content.split(/(?=\n=== Aba:)/)
+
+  for (const section of sections) {
+    const nameMatch = section.match(/=== Aba: (.+?) ===/)
+    if (!nameMatch) continue
+    const name = nameMatch[1].trim()
+
+    const colLine = section.match(/^Colunas: (.+)$/m)
+    const columns = colLine ? colLine[1].split(' | ').map(c => c.trim()).filter(Boolean) : []
+
+    const rowMatch =
+      section.match(/Amostra estruturada \(\d+ de (\d+) linhas de dados\)/) ||
+      section.match(/Amostra \(\d+ de (\d+) linhas\)/)
+    const totalRows = Number(rowMatch?.[1] || 0)
+
+    const stats: Record<string, { sum: number; min: number; max: number; count: number }> = {}
+
+    if (columns.length > 0) {
+      const blockMatch = section.match(/Amostra estruturada[^\n]*\n([\s\S]*?)(?:\.\.\. |$)/)
+      if (blockMatch) {
+        const lines = blockMatch[1].split('\n').filter(l => l.trim())
+        for (const line of lines.slice(1)) {
+          const cells = line.split('\t')
+          columns.forEach((col, i) => {
+            const raw = (cells[i] ?? '').trim()
+            const cleaned = raw.replace(/\s/g, '').replace(/\.(?=\d{3}[,\.])/g, '').replace(',', '.')
+            const n = Number(cleaned)
+            if (!isNaN(n) && isFinite(n) && raw !== '' && raw !== '-') {
+              if (!stats[col]) stats[col] = { sum: 0, min: n, max: n, count: 0 }
+              stats[col].sum += n
+              stats[col].min = Math.min(stats[col].min, n)
+              stats[col].max = Math.max(stats[col].max, n)
+              stats[col].count++
+            }
+          })
+        }
+      }
+    }
+
+    const numericCols = Object.entries(stats)
+      .filter(([, s]) => s.count > 0)
+      .map(([colName, s]) => ({ name: colName, sum: s.sum, min: s.min, max: s.max, avg: s.sum / s.count }))
+
+    sheets.push({ name, columns, totalRows, numericCols })
+  }
+
+  return sheets
+}
+
+function formatNumber(n: number): string {
+  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(2).replace('.', ',')} M`
+  if (Math.abs(n) >= 1_000) return n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+  return n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
 }
 
 function isSpreadsheetLike(file: ParsedAIFile): boolean {

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import {
   Zap, Upload, Brain, FileText, BarChart3, MessageSquare,
-  CheckCircle, ArrowRight, Shield, TrendingUp, Target, ChevronRight,
+  CheckCircle, ArrowRight, Shield, TrendingUp, Target, ChevronRight, Star,
 } from 'lucide-react'
 
 export default function LandingPage() {
@@ -20,6 +20,7 @@ export default function LandingPage() {
             <a href="#features" className="hover:text-[#1E3A5F] transition-colors">Funcionalidades</a>
             <a href="#how" className="hover:text-[#1E3A5F] transition-colors">Como funciona</a>
             <a href="#formats" className="hover:text-[#1E3A5F] transition-colors">Formatos</a>
+            <a href="#pricing" className="hover:text-[#1E3A5F] transition-colors">Preços</a>
           </nav>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-[#1E3A5F] transition-colors">
@@ -212,6 +213,119 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="pricing" className="py-20 px-6 bg-slate-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-[#0F1B2D] mb-4">Planos e preços</h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">
+              Comece grátis e escale quando precisar. Sem burocracia, sem contrato de longo prazo.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 items-stretch">
+            {/* Free */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 flex flex-col">
+              <div className="mb-6">
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Grátis</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-4xl font-bold text-[#0F1B2D]">R$ 0</span>
+                </div>
+                <p className="text-sm text-slate-400">Para sempre, sem cartão</p>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  '5 análises por mês',
+                  'Excel, CSV e texto',
+                  'Resumo executivo',
+                  'Dashboard automático',
+                  '1 usuário',
+                ].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/register" className="block text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+                Começar grátis
+              </Link>
+            </div>
+
+            {/* Pro — destaque */}
+            <div className="bg-[#1E3A5F] rounded-2xl p-8 flex flex-col relative overflow-hidden shadow-xl shadow-[#1E3A5F]/20">
+              <div className="absolute top-4 right-4">
+                <span className="bg-emerald-400 text-[#0F1B2D] text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-current" /> Popular
+                </span>
+              </div>
+              <div className="mb-6">
+                <p className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-2">Pro</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-4xl font-bold text-white">R$ 97</span>
+                  <span className="text-slate-400 mb-1">/mês</span>
+                </div>
+                <p className="text-sm text-slate-400">Cobrado mensalmente</p>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  'Análises ilimitadas',
+                  'Todos os formatos (PDF, PPTX, imagens)',
+                  'Diagnóstico completo com IA',
+                  'Plano de ação com prioridades',
+                  'Chat com os dados',
+                  'Exportação em PDF',
+                  'Histórico completo',
+                  'Até 5 usuários',
+                ].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-white/90">
+                    <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/register" className="block text-center bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm shadow-lg shadow-emerald-500/30">
+                Assinar Pro
+              </Link>
+            </div>
+
+            {/* Enterprise */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 flex flex-col">
+              <div className="mb-6">
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Empresarial</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-4xl font-bold text-[#0F1B2D]">R$ 297</span>
+                  <span className="text-slate-400 mb-1">/mês</span>
+                </div>
+                <p className="text-sm text-slate-400">Para frotas e operações maiores</p>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  'Tudo do plano Pro',
+                  'Usuários ilimitados',
+                  'Gestão de motoristas',
+                  'Supervisão de equipe',
+                  'Análises por organização',
+                  'Suporte prioritário',
+                  'Onboarding dedicado',
+                ].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/register" className="block text-center bg-[#1E3A5F] hover:bg-[#162d4a] text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+                Falar com vendas
+              </Link>
+            </div>
+          </div>
+          <p className="text-center text-xs text-slate-400 mt-8">
+            Todos os planos incluem SSL, backups automáticos e conformidade com LGPD.
+            Cancele quando quiser, sem multa.
+          </p>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-20 px-6 bg-gradient-to-r from-emerald-600 to-emerald-500">
         <div className="max-w-3xl mx-auto text-center">
@@ -237,8 +351,8 @@ export default function LandingPage() {
           </div>
           <p className="text-xs text-slate-400">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
           <div className="flex items-center gap-4 text-xs text-slate-400">
-            <a href="#" className="hover:text-slate-600">Privacidade</a>
-            <a href="#" className="hover:text-slate-600">Termos</a>
+            <Link href="/privacidade" className="hover:text-slate-600">Privacidade</Link>
+            <Link href="/termos" className="hover:text-slate-600">Termos</Link>
           </div>
         </div>
       </footer>

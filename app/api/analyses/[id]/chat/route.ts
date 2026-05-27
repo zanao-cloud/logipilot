@@ -19,12 +19,20 @@ export async function POST(
 
   const admin = createAdminClient()
 
-  const { data: analysis } = await admin
-    .from('analyses')
-    .select('result')
-    .eq('id', id)
-    .eq('user_id', user.id)
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role, organization_id')
+    .eq('id', user.id)
     .single()
+
+  let analysisQuery = admin.from('analyses').select('result').eq('id', id)
+  if (profile?.role === 'gestor' && profile.organization_id) {
+    analysisQuery = analysisQuery.eq('organization_id', profile.organization_id)
+  } else {
+    analysisQuery = analysisQuery.eq('user_id', user.id)
+  }
+
+  const { data: analysis } = await analysisQuery.single()
 
   if (!analysis?.result) {
     return NextResponse.json({ error: 'Análise não encontrada' }, { status: 404 })

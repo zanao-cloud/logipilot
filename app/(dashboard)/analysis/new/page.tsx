@@ -174,7 +174,7 @@ export default function NewAnalysisPage() {
                   <span className="font-semibold text-slate-800">Com IA</span>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Diagnóstico interpretativo, hipóteses e plano de ação usando Gemini.
+                  Diagnóstico interpretativo, hipóteses e plano de ação usando Inteligência Artificial.
                 </p>
               </button>
             </div>
