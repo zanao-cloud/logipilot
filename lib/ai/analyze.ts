@@ -88,7 +88,7 @@ export async function analyzeData(files: FileInput[], userContext?: string): Pro
   }
 
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: 'llama-3.1-8b-instant',
     messages: [{ role: 'user', content: parts.join('\n') }],
     max_tokens: 8192,
     temperature: 0.1,
@@ -126,7 +126,7 @@ REGRAS:
 - Separe fatos de hipóteses quando relevante`
 
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: 'llama-3.1-8b-instant',
     messages: [
       { role: 'system', content: systemContext },
       ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
