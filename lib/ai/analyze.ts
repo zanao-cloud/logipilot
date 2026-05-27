@@ -1,9 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 import type { AnalysisResult } from '@/types'
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
 
 const SYSTEM_PROMPT = `Você é um analista operacional júnior especializado em diagnóstico de dados empresariais.
 
@@ -15,106 +13,52 @@ REGRAS FUNDAMENTAIS:
 3. Se os dados forem insuficientes para uma análise, indique explicitamente.
 4. Seja preciso e objetivo. Evite linguagem vaga.
 5. Para dashboards, extraia apenas dados que realmente existem nos arquivos.
+6. Retorne APENAS o JSON válido pedido, sem texto adicional antes ou depois.`
 
-Retorne SEMPRE um JSON válido no seguinte formato, sem texto adicional fora do JSON:`
-
-const RESULT_SCHEMA = `{
+const RESULT_SCHEMA = `Retorne SOMENTE este JSON (sem markdown, sem blocos de código, sem texto fora do JSON):
+{
   "executive_summary": {
-    "title": "string - título descritivo baseado no conteúdo",
-    "overview": "string - visão geral em 2-3 parágrafos",
-    "key_highlights": ["string - 3 a 6 destaques principais"],
-    "period": "string - período identificado nos dados (ou null)",
-    "data_sources": ["string - fontes identificadas"]
+    "title": "string",
+    "overview": "string",
+    "key_highlights": ["string"],
+    "period": "string ou null",
+    "data_sources": ["string"]
   },
   "indicators": [
-    {
-      "name": "string",
-      "value": "string ou número",
-      "unit": "string (opcional)",
-      "trend": "up|down|stable (opcional)",
-      "trend_value": "string (opcional, ex: +12%)",
-      "category": "string (ex: Financeiro, Operacional, Logístico)",
-      "status": "good|warning|critical|neutral"
-    }
+    { "name": "string", "value": "string", "unit": "string", "trend": "up|down|stable", "trend_value": "string", "category": "string", "status": "good|warning|critical|neutral" }
   ],
   "dashboard_data": {
     "charts": [
-      {
-        "id": "string",
-        "title": "string",
-        "type": "bar|line|pie|area",
-        "data": [{"label": "string", "value": number, "...outros campos conforme tipo"}],
-        "x_key": "string",
-        "y_keys": ["string"],
-        "colors": ["string"]
-      }
+      { "id": "string", "title": "string", "type": "bar|line|pie|area", "data": [{"label": "string", "value": 0}], "x_key": "label", "y_keys": ["value"], "colors": ["#1E3A5F"] }
     ],
     "summary_cards": [
-      {
-        "title": "string",
-        "value": "string",
-        "change": "string (opcional)",
-        "trend": "up|down|stable (opcional)"
-      }
+      { "title": "string", "value": "string", "change": "string", "trend": "up|down|stable" }
     ]
   },
   "diagnosis": {
-    "overall_assessment": "string - avaliação geral em 1 parágrafo",
-    "health_score": number (0-100),
-    "observed_facts": ["string - fatos concretos observados nos dados"],
-    "hypotheses": ["string - hipóteses baseadas nos padrões (indicar que são hipóteses)"],
-    "recommendations": ["string - recomendações concretas"],
-    "priority_areas": ["string - áreas que precisam de atenção imediata"]
+    "overall_assessment": "string",
+    "health_score": 0,
+    "observed_facts": ["string"],
+    "hypotheses": ["string"],
+    "recommendations": ["string"],
+    "priority_areas": ["string"]
   },
   "bottlenecks": [
-    {
-      "title": "string",
-      "description": "string",
-      "severity": "high|medium|low",
-      "evidence": "string - evidência nos dados",
-      "impact": "string"
-    }
+    { "title": "string", "description": "string", "severity": "high|medium|low", "evidence": "string", "impact": "string" }
   ],
   "risks": [
-    {
-      "title": "string",
-      "description": "string",
-      "severity": "high|medium|low",
-      "evidence": "string",
-      "impact": "string"
-    }
+    { "title": "string", "description": "string", "severity": "high|medium|low", "evidence": "string", "impact": "string" }
   ],
   "inconsistencies": [
-    {
-      "title": "string",
-      "description": "string",
-      "location": "string - onde foi encontrado",
-      "suggestion": "string",
-      "severity": "high|medium|low"
-    }
+    { "title": "string", "description": "string", "location": "string", "suggestion": "string", "severity": "high|medium|low" }
   ],
   "opportunities": [
-    {
-      "title": "string",
-      "description": "string",
-      "potential_impact": "string",
-      "effort": "low|medium|high",
-      "timeframe": "string (ex: 30 dias, 3 meses)"
-    }
+    { "title": "string", "description": "string", "potential_impact": "string", "effort": "low|medium|high", "timeframe": "string" }
   ],
   "action_plan": [
-    {
-      "priority": number (1=mais urgente),
-      "title": "string",
-      "description": "string",
-      "responsible": "string (opcional)",
-      "deadline": "string",
-      "expected_result": "string",
-      "effort": "low|medium|high",
-      "category": "immediate|short_term|medium_term"
-    }
+    { "priority": 1, "title": "string", "description": "string", "responsible": "string", "deadline": "string", "expected_result": "string", "effort": "low|medium|high", "category": "immediate|short_term|medium_term" }
   ],
-  "limitations": ["string - limitações desta análise, dados faltantes, alertas sobre qualidade dos dados"]
+  "limitations": ["string"]
 }`
 
 interface FileInput {
@@ -127,64 +71,41 @@ interface FileInput {
 }
 
 export async function analyzeData(files: FileInput[], userContext?: string): Promise<AnalysisResult> {
-  const contentBlocks: Anthropic.MessageParam['content'] = []
+  const textParts: Array<{ text: string }> = []
+  const inlineParts: Array<{ inlineData: { mimeType: string; data: string } }> = []
 
-  contentBlocks.push({
-    type: 'text',
-    text: `Analise os seguintes dados operacionais e retorne o JSON estruturado conforme o schema.\n\n${RESULT_SCHEMA}\n\n${userContext ? `Contexto adicional fornecido pelo usuário: ${userContext}\n\n` : ''}Arquivos para análise:`,
+  textParts.push({
+    text: `${SYSTEM_PROMPT}\n\n${RESULT_SCHEMA}\n\n${userContext ? `Contexto fornecido: ${userContext}\n\n` : ''}Analise os seguintes dados:`,
   })
 
   for (const file of files) {
-    if (file.isImage && file.imageBase64 && file.imageMediaType) {
-      if (file.imageMediaType === 'application/pdf') {
-        contentBlocks.push({
-          type: 'text',
-          text: `\n--- Arquivo PDF: ${file.name} ---`,
-        })
-        contentBlocks.push({
-          type: 'document',
-          source: {
-            type: 'base64',
-            media_type: 'application/pdf',
-            data: file.imageBase64,
-          },
-        } as Anthropic.DocumentBlockParam)
-      } else {
-        contentBlocks.push({
-          type: 'text',
-          text: `\n--- Imagem: ${file.name} ---`,
-        })
-        contentBlocks.push({
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: file.imageMediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-            data: file.imageBase64,
-          },
-        })
-      }
-    } else {
-      contentBlocks.push({
-        type: 'text',
-        text: `\n--- Arquivo: ${file.name} (${file.type}) ---\n${file.content}`,
+    if (file.isImage && file.imageBase64) {
+      textParts.push({ text: `\n--- Arquivo: ${file.name} ---` })
+      inlineParts.push({
+        inlineData: {
+          mimeType: file.imageMediaType || 'image/jpeg',
+          data: file.imageBase64,
+        },
       })
+    } else {
+      textParts.push({ text: `\n--- Arquivo: ${file.name} (${file.type}) ---\n${file.content}` })
     }
   }
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 8192,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: contentBlocks }],
+  const allParts = [...textParts, ...inlineParts]
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.0-flash',
+    contents: [{ role: 'user', parts: allParts }],
+    config: {
+      maxOutputTokens: 8192,
+      temperature: 0.1,
+    },
   })
 
-  const responseText = message.content
-    .filter((b) => b.type === 'text')
-    .map((b) => (b as Anthropic.TextBlock).text)
-    .join('')
-
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('IA não retornou JSON válido')
+  const text = response.text ?? ''
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('IA não retornou JSON válido. Tente novamente.')
 
   return JSON.parse(jsonMatch[0]) as AnalysisResult
 }
@@ -194,29 +115,32 @@ export async function chatWithData(
   messages: { role: 'user' | 'assistant'; content: string }[],
   userMessage: string
 ): Promise<string> {
-  const systemPrompt = `Você é um analista operacional assistente. Responda perguntas sobre esta análise de dados.
+  const systemContext = `Você é um assistente de análise operacional. Responda perguntas sobre esta análise de dados.
 
-Análise disponível:
-${JSON.stringify(analysisResult, null, 2)}
+Análise disponível (JSON):
+${JSON.stringify(analysisResult, null, 2).slice(0, 30000)}
 
 REGRAS:
-- Responda apenas com base nos dados analisados
-- Seja direto e objetivo
-- Se não souber ou os dados não permitirem responder, diga claramente
-- Use formatação markdown quando útil
+- Responda apenas com base nos dados da análise acima
+- Seja direto e objetivo, use markdown quando útil
+- Se não houver dados suficientes para responder, diga claramente
 - Separe fatos de hipóteses quando relevante`
 
-  const apiMessages = [
-    ...messages,
-    { role: 'user' as const, content: userMessage },
-  ]
+  const history = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' as const : 'user' as const,
+    parts: [{ text: m.content }],
+  }))
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: apiMessages,
+  const chat = ai.chats.create({
+    model: 'gemini-2.0-flash',
+    history: [
+      { role: 'user', parts: [{ text: systemContext }] },
+      { role: 'model', parts: [{ text: 'Entendido. Estou pronto para responder perguntas sobre esta análise.' }] },
+      ...history,
+    ],
+    config: { maxOutputTokens: 2048, temperature: 0.2 },
   })
 
-  return (response.content[0] as Anthropic.TextBlock).text
+  const response = await chat.sendMessage({ message: userMessage })
+  return response.text ?? 'Não consegui processar sua pergunta.'
 }

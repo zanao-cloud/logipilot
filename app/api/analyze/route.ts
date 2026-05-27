@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { analyzeData } from '@/lib/ai/analyze'
 import * as XLSX from 'xlsx'
 
-export const maxDuration = 300
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()

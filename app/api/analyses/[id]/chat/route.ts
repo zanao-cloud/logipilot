@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { chatWithData } from '@/lib/ai/analyze'
 
-export const maxDuration = 60
+export const maxDuration = 30
 
 export async function POST(
   request: NextRequest,
