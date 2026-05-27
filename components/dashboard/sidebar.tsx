@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, PlusCircle, History, LogOut, ChevronRight, Zap, Users } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, History, LogOut, ChevronRight, Zap, Users, Truck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/lib/hooks/use-profile'
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/analysis/new', icon: PlusCircle, label: 'Nova Análise' },
   { href: '/history', icon: History, label: 'Histórico' },
+  { href: '/dashboard/motoristas', icon: Truck, label: 'Motoristas', gestorOnly: true },
   { href: '/dashboard/equipe', icon: Users, label: 'Equipe', gestorOnly: true },
 ]
 
