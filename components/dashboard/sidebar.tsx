@@ -59,11 +59,13 @@ function getInitials(name: string) {
     : (parts[0] || '?').slice(0, 2).toUpperCase()
 }
 
-export function Sidebar() {
+export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks/use-profile').UserProfile | null }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const { profile, loading: profileLoading } = useProfile()
+  const { profile: clientProfile } = useProfile()
+  const profile = serverProfile ?? clientProfile
+  const profileLoading = !serverProfile && !clientProfile
 
   async function handleLogout() {
     await supabase.auth.signOut()
