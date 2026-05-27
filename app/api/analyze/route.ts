@@ -665,35 +665,46 @@ function createLocalAnalysis(files: ParsedAIFile[], userContext?: string, aiUnav
     },
     diagnosis: {
       overall_assessment: aiUnavailable
-        ? 'A leitura estrutural funcionou, mas o diagnóstico inteligente não pôde ser gerado porque a conexão com a API de IA falhou. Reprocessar a análise quando a API estiver acessível gera o relatório completo.'
+        ? 'A leitura dos dados funcionou, mas a conexão com a API de IA falhou antes de gerar o diagnóstico. Os dados estão intactos — tente novamente quando a API estiver acessível.'
         : allSheets.length > 0
-          ? `A planilha foi lida com sucesso em modo local. ${allNumericCols.length > 0 ? `As colunas numéricas (${allNumericCols.map(c => c.name).slice(0, 4).join(', ')}) foram calculadas automaticamente.` : 'Nenhuma coluna puramente numérica foi detectada na amostra.'} Para diagnóstico operacional avançado com gargalos, riscos e plano de ação, utilize a análise com IA.`
-          : 'Leitura estrutural concluída. O diagnóstico sem IA cobre volume e estrutura tabular, mas não interpreta o contexto operacional dos dados.',
-      health_score: aiUnavailable ? 50 : 70,
+          ? `Planilha lida com sucesso: ${totalSheets} aba${totalSheets !== 1 ? 's' : ''}, ${totalRows} linha${totalRows !== 1 ? 's' : ''}, ${uniqueCols.length} coluna${uniqueCols.length !== 1 ? 's' : ''}${allNumericCols.length > 0 ? `. Colunas numéricas calculadas: ${allNumericCols.map(c => `${c.name} (total: ${formatNumber(c.sum)})`).slice(0, 4).join(', ')}.` : '. Nenhuma coluna numérica detectada na amostra.'}`
+          : imageFiles.length > 0
+            ? `${imageFiles.length} imagem${imageFiles.length !== 1 ? 's' : ''} recebida${imageFiles.length !== 1 ? 's' : ''}. O modo local acessa apenas metadados (nome, tipo, tamanho). O conteúdo visual não pode ser interpretado sem a etapa de IA.`
+            : 'Arquivos lidos. Metadados e estrutura extraídos com sucesso.',
+      health_score: aiUnavailable ? 50 : allSheets.length > 0 && allNumericCols.length > 0 ? 75 : 60,
       observed_facts: diagnosisFacts,
       hypotheses: [
         aiUnavailable
-          ? 'A falha ocorreu na chamada externa à API de IA, não na leitura da planilha — os dados estão intactos.'
+          ? 'A falha ocorreu na chamada externa à API de IA, não na leitura do arquivo — os dados estão íntegros.'
           : allNumericCols.length > 0
-            ? `Os valores numéricos parecem consistentes; totais e médias foram calculados automaticamente. Verificação de outliers e tendências requer análise com IA.`
-            : 'Os dados parecem textuais/categoriais. A análise com IA é recomendada para extrair padrões e insights relevantes.',
-      ],
+            ? `${allNumericCols.length} coluna${allNumericCols.length !== 1 ? 's' : ''} numérica${allNumericCols.length !== 1 ? 's' : ''} detectada${allNumericCols.length !== 1 ? 's' : ''}: ${allNumericCols.map(c => `${c.name} (média ${formatNumber(c.avg)})`).slice(0, 3).join(', ')}.`
+            : uniqueCols.length > 0
+              ? 'As colunas parecem textuais ou categóricas. Não foi possível calcular totais ou médias automaticamente.'
+              : 'Sem colunas identificadas na amostra.',
+      ].filter(Boolean),
       recommendations: [
         aiUnavailable
-          ? 'Tente reprocessar a análise em alguns minutos quando a conexão com a API estiver estável.'
-          : 'Use o modo com IA para obter diagnóstico operacional, identificação de gargalos e plano de ação detalhado.',
+          ? 'Tente novamente em alguns minutos quando a API estiver estável.'
+          : allNumericCols.length > 0
+            ? `Verifique se os valores de ${allNumericCols[0].name} (máx: ${formatNumber(allNumericCols[0].max)}, mín: ${formatNumber(allNumericCols[0].min)}) estão dentro do esperado para o período.`
+            : uniqueCols.length > 0
+              ? `Confirme que as colunas ${uniqueCols.slice(0, 4).join(', ')} estão preenchidas em todos os registros.`
+              : 'Organize os dados com cabeçalhos nomeados para facilitar análises futuras.',
         aiUnavailable
-          ? 'Se o erro persistir, verifique a chave GROQ_API_KEY nas variáveis de ambiente.'
-          : uniqueCols.length > 0
-            ? `Certifique-se de que as colunas principais (${uniqueCols.slice(0, 4).join(', ')}) têm nomes claros para melhorar a análise com IA.`
-            : 'Envie planilhas com cabeçalhos claros para melhorar a detecção automática de colunas.',
-        truncated ? 'Parte do conteúdo foi truncada — envie a planilha em partes menores para análise completa.' : 'Para planilhas grandes, filtre pelas abas e colunas mais relevantes antes de enviar.',
-      ],
+          ? 'Verifique a chave GROQ_API_KEY nas variáveis de ambiente se o erro persistir.'
+          : truncated
+            ? 'Parte do conteúdo foi truncada. Para análise completa, envie a planilha com menos abas ou colunas.'
+            : totalRows > 100
+              ? `${totalRows} registros lidos. Para análises históricas, considere filtrar por período antes de enviar.`
+              : '',
+      ].filter(Boolean),
       priority_areas: aiUnavailable
-        ? ['Conectividade com API de IA', 'Validação da planilha']
+        ? ['Conectividade com API', 'Validação dos dados']
         : allNumericCols.length > 0
-          ? ['Colunas numéricas', 'Qualidade dos dados', 'Estrutura tabular']
-          : ['Estrutura da planilha', 'Qualidade dos dados'],
+          ? allNumericCols.slice(0, 3).map(c => c.name)
+          : uniqueCols.length > 0
+            ? uniqueCols.slice(0, 3)
+            : ['Estrutura dos dados'],
     },
     bottlenecks: aiUnavailable ? [
       {
@@ -706,55 +717,182 @@ function createLocalAnalysis(files: ParsedAIFile[], userContext?: string, aiUnav
     ] : [],
     risks: [],
     inconsistencies: [],
-    opportunities: [
-      {
-        title: aiUnavailable ? 'Reprocessar com IA após estabilizar a conexão' : 'Análise completa com IA',
-        description: aiUnavailable
-          ? 'A estrutura da planilha já foi lida com sucesso; uma nova tentativa deve gerar o relatório completo.'
-          : 'Envie esta mesma planilha usando o modo "Com IA" para obter diagnóstico estratégico, identificação de gargalos, riscos e plano de ação detalhado.',
-        potential_impact: aiUnavailable
-          ? 'Diagnóstico completo com indicadores, gargalos, riscos e plano de ação.'
-          : 'Insights operacionais avançados e recomendações acionáveis com base nos dados reais.',
-        effort: 'low',
-        timeframe: aiUnavailable ? 'Imediato' : 'Imediato',
-      },
-    ],
-    action_plan: [
+    opportunities: buildOpportunities(allSheets, allNumericCols, uniqueCols, totalRows, aiUnavailable),
+    action_plan: buildActionPlan(allSheets, allNumericCols, uniqueCols, totalRows, imageFiles, aiUnavailable),
+    limitations: [
+      aiUnavailable
+        ? 'Análise gerada em modo básico — a API de IA estava indisponível durante o processamento.'
+        : `Análise estrutural local: ${allSheets.length > 0 ? `${totalRows} linhas lidas, totais e médias calculados` : 'metadados de arquivo extraídos'}. Interpretação semântica e diagnóstico estratégico não estão disponíveis neste modo.`,
+      userContext ? `Contexto informado: ${userContext}` : '',
+      truncated ? 'Parte do conteúdo foi truncada para manter o processamento estável. Envie a planilha em partes menores para análise completa.' : '',
+    ].filter(Boolean),
+  }
+}
+
+function buildOpportunities(
+  sheets: SheetData[],
+  numericCols: Array<{ name: string; sum: number; min: number; max: number; avg: number }>,
+  uniqueCols: string[],
+  totalRows: number,
+  aiUnavailable: boolean,
+) {
+  if (aiUnavailable) {
+    return [{
+      title: 'Reprocessar após restaurar a conexão',
+      description: 'A estrutura dos dados foi lida com sucesso. Tente novamente quando a API estiver acessível.',
+      potential_impact: 'Diagnóstico completo com gargalos, riscos e plano de ação baseado nos dados.',
+      effort: 'low' as const,
+      timeframe: 'Imediato',
+    }]
+  }
+
+  const opps = []
+
+  if (numericCols.length >= 2) {
+    const top = numericCols[0]
+    opps.push({
+      title: `Acompanhar evolução de ${top.name}`,
+      description: `Total acumulado: ${formatNumber(top.sum)}. Maior valor registrado: ${formatNumber(top.max)}. Monitorar variação entre períodos pode identificar tendências de crescimento ou queda.`,
+      potential_impact: `Detecção antecipada de desvios em ${top.name}.`,
+      effort: 'low' as const,
+      timeframe: 'Próxima análise',
+    })
+    const sec = numericCols[1]
+    opps.push({
+      title: `Correlacionar ${top.name} com ${sec.name}`,
+      description: `${top.name} (média: ${formatNumber(top.avg)}) e ${sec.name} (média: ${formatNumber(sec.avg)}) estão ambas presentes na planilha. Cruzar os valores pode revelar padrões operacionais.`,
+      potential_impact: 'Identificação de eficiência ou ineficiência entre métricas.',
+      effort: 'medium' as const,
+      timeframe: 'Curto prazo',
+    })
+  } else if (numericCols.length === 1) {
+    const col = numericCols[0]
+    opps.push({
+      title: `Distribuição de ${col.name}`,
+      description: `Valores entre ${formatNumber(col.min)} e ${formatNumber(col.max)}, média de ${formatNumber(col.avg)}. Investigar registros abaixo ou acima de 2× a média pode revelar outliers.`,
+      potential_impact: 'Identificação de registros anômalos que precisam de atenção.',
+      effort: 'low' as const,
+      timeframe: 'Imediato',
+    })
+  } else if (sheets.length > 0 && totalRows > 0) {
+    opps.push({
+      title: `Verificar completude das ${totalRows} linhas`,
+      description: `A planilha tem ${totalRows} registros com ${uniqueCols.length} colunas. Filtrar registros com valores vazios nas colunas obrigatórias garante a integridade dos dados.`,
+      potential_impact: 'Base de dados mais confiável para análises futuras.',
+      effort: 'low' as const,
+      timeframe: 'Imediato',
+    })
+  }
+
+  return opps.length > 0 ? opps : [{
+    title: 'Estruturar os dados para análise',
+    description: `${uniqueCols.length > 0 ? `Colunas detectadas: ${uniqueCols.slice(0, 5).join(', ')}. ` : ''}Organizar os dados com colunas nomeadas facilita a extração automática de KPIs.`,
+    potential_impact: 'Indicadores calculados automaticamente em análises futuras.',
+    effort: 'low' as const,
+    timeframe: 'Próxima análise',
+  }]
+}
+
+function buildActionPlan(
+  sheets: SheetData[],
+  numericCols: Array<{ name: string; sum: number; min: number; max: number; avg: number }>,
+  uniqueCols: string[],
+  totalRows: number,
+  imageFiles: ParsedAIFile[],
+  aiUnavailable: boolean,
+) {
+  if (aiUnavailable) {
+    return [
       {
         priority: 1,
-        title: aiUnavailable ? 'Validar conexão com a API Groq' : 'Reprocessar com modo IA',
-        description: aiUnavailable
-          ? 'Confirmar que GROQ_API_KEY está válida e que o ambiente consegue acessar a API do Groq (api.groq.com).'
-          : allSheets.length > 0
-            ? `A planilha foi lida com ${totalRows > 0 ? `${totalRows} linhas` : 'sucesso'}. Agora use o modo "Com IA" para obter o diagnóstico completo com base nestes dados.`
-            : 'Envie os arquivos pelo modo "Com IA" para obter análise completa com diagnóstico, gargalos e plano de ação.',
-        deadline: aiUnavailable ? 'Hoje' : 'Próxima análise',
-        expected_result: aiUnavailable ? 'Análises completas voltam a ser geradas sem fallback.' : 'Relatório operacional completo com IA.',
-        effort: 'low',
-        category: 'immediate',
+        title: 'Verificar conexão com a API',
+        description: 'Confirmar que GROQ_API_KEY está correta e que a rede consegue alcançar api.groq.com. A leitura dos dados funcionou — só a etapa de IA falhou.',
+        deadline: 'Hoje',
+        expected_result: 'Análise completa gerada na próxima tentativa.',
+        effort: 'low' as const,
+        category: 'immediate' as const,
       },
       {
         priority: 2,
-        title: aiUnavailable ? 'Reenviar a planilha' : 'Padronizar nomes das colunas',
-        description: aiUnavailable
-          ? 'Após validar a API, execute uma nova análise com o mesmo arquivo para gerar o diagnóstico completo.'
-          : uniqueCols.length > 0
-            ? `As colunas detectadas foram: ${uniqueCols.slice(0, 5).join(', ')}. Mantenha nomes padronizados para melhorar os KPIs automáticos em futuras análises.`
-            : 'Organize a planilha com cabeçalhos claros (data, motorista, rota, status, valor) para maximizar os KPIs automáticos.',
-        deadline: aiUnavailable ? 'Após validação da API' : 'Próxima análise',
-        expected_result: aiUnavailable ? 'Relatório operacional completo com IA.' : 'KPIs mais precisos e análise mais completa.',
-        effort: 'low',
-        category: 'short_term',
+        title: 'Reenviar o arquivo',
+        description: 'Após corrigir a conexão, reenvie o mesmo arquivo para gerar o diagnóstico completo.',
+        deadline: 'Após corrigir a API',
+        expected_result: 'Relatório com indicadores, gargalos e plano de ação.',
+        effort: 'low' as const,
+        category: 'short_term' as const,
       },
-    ],
-    limitations: [
-      aiUnavailable
-        ? 'Diagnóstico gerado em modo básico por indisponibilidade temporária da API de IA (Groq/Llama).'
-        : 'Diagnóstico gerado sem IA — cobre estrutura e totais, mas não interpreta contexto operacional avançado.',
-      userContext ? `Contexto informado: ${userContext}` : 'Nenhum contexto adicional foi informado.',
-      truncated ? 'Parte do conteúdo da planilha foi truncada para manter o processamento estável.' : 'Análise completa dentro do limite de caracteres suportado.',
-    ],
+    ]
   }
+
+  const plan = []
+
+  if (numericCols.length > 0) {
+    const mainCol = numericCols[0]
+    plan.push({
+      priority: 1,
+      title: `Revisar valores de ${mainCol.name}`,
+      description: `Total: ${formatNumber(mainCol.sum)} | Média: ${formatNumber(mainCol.avg)} | Mín: ${formatNumber(mainCol.min)} | Máx: ${formatNumber(mainCol.max)}. Identificar registros fora do intervalo esperado e corrigir inconsistências.`,
+      deadline: 'Esta semana',
+      expected_result: `Integridade dos dados de ${mainCol.name} validada.`,
+      effort: 'low' as const,
+      category: 'immediate' as const,
+    })
+    if (numericCols.length > 1) {
+      const secCol = numericCols[1]
+      plan.push({
+        priority: 2,
+        title: `Conferir ${secCol.name}`,
+        description: `Total: ${formatNumber(secCol.sum)} | Média: ${formatNumber(secCol.avg)}. Verificar se os valores de ${secCol.name} estão coerentes com os de ${mainCol.name}.`,
+        deadline: 'Esta semana',
+        expected_result: `Relação entre ${mainCol.name} e ${secCol.name} compreendida.`,
+        effort: 'low' as const,
+        category: 'short_term' as const,
+      })
+    }
+  } else if (sheets.length > 0 && totalRows > 0) {
+    plan.push({
+      priority: 1,
+      title: `Validar as ${totalRows} linhas da planilha`,
+      description: `${uniqueCols.length > 0 ? `Colunas: ${uniqueCols.slice(0, 5).join(', ')}. ` : ''}Verificar valores ausentes, duplicatas e registros inconsistentes garante qualidade na análise.`,
+      deadline: 'Esta semana',
+      expected_result: 'Dados limpos e prontos para análise.',
+      effort: 'low' as const,
+      category: 'immediate' as const,
+    })
+    plan.push({
+      priority: 2,
+      title: 'Adicionar colunas numéricas',
+      description: uniqueCols.length > 0
+        ? `A planilha tem as colunas ${uniqueCols.slice(0, 5).join(', ')}, mas sem valores numéricos identificados. Adicionar métricas como quantidade, valor ou tempo permite calcular totais e médias automaticamente.`
+        : 'Planilhas com colunas numéricas (quantidade, valor, distância, tempo) permitem totais e médias automáticos neste modo.',
+      deadline: 'Próxima versão',
+      expected_result: 'KPIs calculados automaticamente sem IA.',
+      effort: 'medium' as const,
+      category: 'short_term' as const,
+    })
+  } else if (imageFiles.length > 0) {
+    plan.push({
+      priority: 1,
+      title: 'Usar modo Com IA para imagens',
+      description: `${imageFiles.length > 1 ? `${imageFiles.length} imagens enviadas.` : `Imagem "${imageFiles[0].name}" enviada.`} Imagens precisam do modo Com IA para interpretar o conteúdo visual — o modo local só acessa metadados.`,
+      deadline: 'Imediato',
+      expected_result: 'Análise do conteúdo visual com diagnóstico completo.',
+      effort: 'low' as const,
+      category: 'immediate' as const,
+    })
+  } else {
+    plan.push({
+      priority: 1,
+      title: 'Estruturar os dados',
+      description: 'Envie planilhas com colunas nomeadas e valores numéricos para que o modo local calcule totais e médias automaticamente.',
+      deadline: 'Próxima análise',
+      expected_result: 'Indicadores calculados sem depender de IA.',
+      effort: 'low' as const,
+      category: 'immediate' as const,
+    })
+  }
+
+  return plan
 }
 
 interface SheetData {
