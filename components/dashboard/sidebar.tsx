@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, PlusCircle, History, LogOut,
-  Zap, Users, Truck, BarChart3, Settings,
+  Zap, Users, Truck, BarChart3,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -42,10 +42,11 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: 'Equipe',
+    title: 'Gestão',
     items: [
-      { href: '/dashboard/motoristas', icon: Truck,  label: 'Motoristas',    gestorOnly: true },
-      { href: '/dashboard/equipe',     icon: Users,  label: 'Colaboradores', gestorOnly: true },
+      { href: '/dashboard/motoristas',  icon: Truck,    label: 'Motoristas',    gestorOnly: true },
+      { href: '/dashboard/equipe',      icon: Users,    label: 'Colaboradores', gestorOnly: true },
+      { href: '/dashboard/analises',    icon: BarChart3, label: 'Análises',      gestorOnly: true },
     ],
   },
 ]
