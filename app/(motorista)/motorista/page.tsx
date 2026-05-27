@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/lib/hooks/use-profile'
 import {
-  Truck, Package, Clock, TrendingUp, CheckCircle,
-  MapPin, LogOut, Zap, Bell, ChevronRight, Star,
+  Truck, Package, TrendingUp, CheckCircle,
+  MapPin, LogOut, Zap, Bell, Star,
 } from 'lucide-react'
 
 export default function MotoristaPage() {

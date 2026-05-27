@@ -35,18 +35,22 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     'Que oportunidades existem para melhorar a eficiência?',
   ]
 
+  function createOptimisticMessage(role: 'user' | 'assistant', content: string): ChatMessage {
+    return {
+      id: `optimistic-${role}-${crypto.randomUUID()}`,
+      analysis_id: analysisId,
+      role,
+      content,
+      created_at: new Date().toISOString(),
+    }
+  }
+
   async function sendMessage(content: string) {
     if (!content.trim() || sending || !analysisId) return
     setInput('')
     setSending(true)
 
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      analysis_id: analysisId,
-      role: 'user',
-      content: content.trim(),
-      created_at: new Date().toISOString(),
-    }
+    const userMsg = createOptimisticMessage('user', content.trim())
     setMessages(prev => [...prev, userMsg])
 
     try {
@@ -57,22 +61,10 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       })
 
       const data = await res.json()
-      const assistantMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        analysis_id: analysisId,
-        role: 'assistant',
-        content: data.reply,
-        created_at: new Date().toISOString(),
-      }
+      const assistantMsg = createOptimisticMessage('assistant', data.reply)
       setMessages(prev => [...prev, assistantMsg])
     } catch {
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        analysis_id: analysisId,
-        role: 'assistant',
-        content: 'Erro ao processar sua mensagem. Tente novamente.',
-        created_at: new Date().toISOString(),
-      }])
+      setMessages(prev => [...prev, createOptimisticMessage('assistant', 'Erro ao processar sua mensagem. Tente novamente.')])
     } finally {
       setSending(false)
     }

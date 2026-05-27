@@ -12,11 +12,9 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [done, setDone] = useState(false)
-  const [analysisId, setAnalysisId] = useState('')
 
   useEffect(() => {
     params.then(({ id }) => {
-      setAnalysisId(id)
       fetch(`/api/analyses/${id}`)
         .then(r => r.json())
         .then(data => { setAnalysis(data); setLoading(false) })

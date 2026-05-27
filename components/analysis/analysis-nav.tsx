@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   FileText,
-  BarChart3,
   Brain,
   AlertTriangle,
   Target,

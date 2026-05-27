@@ -1,7 +1,14 @@
 import { GoogleGenAI } from '@google/genai'
 import type { AnalysisResult } from '@/types'
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+function getAI() {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY não configurada. Adicione a chave no .env.local.')
+  }
+
+  return new GoogleGenAI({ apiKey })
+}
 
 const SYSTEM_PROMPT = `Você é um analista operacional júnior especializado em diagnóstico de dados empresariais.
 
@@ -71,6 +78,7 @@ interface FileInput {
 }
 
 export async function analyzeData(files: FileInput[], userContext?: string): Promise<AnalysisResult> {
+  const ai = getAI()
   const textParts: Array<{ text: string }> = []
   const inlineParts: Array<{ inlineData: { mimeType: string; data: string } }> = []
 
@@ -100,14 +108,20 @@ export async function analyzeData(files: FileInput[], userContext?: string): Pro
     config: {
       maxOutputTokens: 8192,
       temperature: 0.1,
+      responseMimeType: 'application/json',
     },
   })
 
   const text = response.text ?? ''
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  const cleanedText = text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '')
+  const jsonMatch = cleanedText.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('IA não retornou JSON válido. Tente novamente.')
 
-  return JSON.parse(jsonMatch[0]) as AnalysisResult
+  try {
+    return JSON.parse(jsonMatch[0]) as AnalysisResult
+  } catch {
+    throw new Error('IA retornou JSON mal formatado. Tente novamente com uma planilha menor ou mais limpa.')
+  }
 }
 
 export async function chatWithData(
@@ -115,6 +129,7 @@ export async function chatWithData(
   messages: { role: 'user' | 'assistant'; content: string }[],
   userMessage: string
 ): Promise<string> {
+  const ai = getAI()
   const systemContext = `Você é um assistente de análise operacional. Responda perguntas sobre esta análise de dados.
 
 Análise disponível (JSON):

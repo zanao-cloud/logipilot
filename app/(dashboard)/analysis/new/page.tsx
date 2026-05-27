@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, FileText, AlertCircle, Zap, Info } from 'lucide-react'
+import { Upload, X, AlertCircle, Zap, Info, Calculator, Brain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -18,14 +18,17 @@ const ACCEPTED = {
   'text/csv': ['.csv'],
   'text/plain': ['.txt'],
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
 }
 
 type ProcessingStage = 'upload' | 'parse' | 'analyze' | 'save'
+type AnalysisMode = 'local' | 'ai'
 
 export default function NewAnalysisPage() {
   const [files, setFiles] = useState<File[]>([])
   const [title, setTitle] = useState('')
   const [context, setContext] = useState('')
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('local')
   const [processing, setProcessing] = useState(false)
   const [stage, setStage] = useState<ProcessingStage>('upload')
   const [error, setError] = useState('')
@@ -59,6 +62,7 @@ export default function NewAnalysisPage() {
     const formData = new FormData()
     formData.append('title', title || `Análise ${new Date().toLocaleDateString('pt-BR')}`)
     formData.append('context', context)
+    formData.append('analysisMode', analysisMode)
     files.forEach(f => formData.append('files', f))
 
     setTimeout(() => setStage('parse'), 1000)
@@ -98,7 +102,7 @@ export default function NewAnalysisPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Nova Análise</h1>
         <p className="text-slate-500 text-sm mt-1">
-          Envie seus dados em qualquer formato e a IA gerará um diagnóstico operacional completo
+          Envie seus dados e escolha entre análise local sem tokens ou diagnóstico completo com IA
         </p>
       </div>
 
@@ -125,6 +129,54 @@ export default function NewAnalysisPage() {
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h2 className="font-semibold text-slate-800">Modo de análise</h2>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('local')}
+                className={`text-left rounded-xl border-2 p-4 transition-all ${
+                  analysisMode === 'local'
+                    ? 'border-[#1E3A5F] bg-[#1E3A5F]/5'
+                    : 'border-slate-100 hover:border-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <Calculator className="w-4 h-4" />
+                  </div>
+                  <span className="font-semibold text-slate-800">Sem IA</span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Leitura de planilhas, indicadores básicos e dashboard sem usar tokens de API.
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('ai')}
+                className={`text-left rounded-xl border-2 p-4 transition-all ${
+                  analysisMode === 'ai'
+                    ? 'border-[#1E3A5F] bg-[#1E3A5F]/5'
+                    : 'border-slate-100 hover:border-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <Brain className="w-4 h-4" />
+                  </div>
+                  <span className="font-semibold text-slate-800">Com IA</span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Diagnóstico interpretativo, hipóteses e plano de ação usando Gemini.
+                </p>
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -156,7 +208,7 @@ export default function NewAnalysisPage() {
                     {isDragActive ? 'Solte os arquivos aqui' : 'Arraste arquivos ou clique para selecionar'}
                   </p>
                   <p className="text-sm text-slate-400 mt-1">
-                    Excel, CSV, PDF, PowerPoint, imagens, prints, texto · Máx. 20 MB por arquivo
+                    Excel, CSV, PDF, PowerPoint, Word, imagens, prints, texto · Máx. 20 MB por arquivo
                   </p>
                 </div>
               </div>
@@ -164,7 +216,7 @@ export default function NewAnalysisPage() {
 
             {/* Format tags */}
             <div className="flex flex-wrap gap-2">
-              {['📊 Excel/XLSX', '📋 CSV', '📄 PDF', '📑 PPTX', '🖼️ Imagens', '📸 Prints', '📝 Texto', '📈 Power BI exportado'].map(f => (
+              {['📊 Excel/XLSX', '📋 CSV', '📄 PDF', '📑 PPTX', '📝 DOCX/TXT', '🖼️ Imagens', '📸 Prints', '📈 Power BI exportado'].map(f => (
                 <span key={f} className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{f}</span>
               ))}
             </div>
@@ -197,9 +249,18 @@ export default function NewAnalysisPage() {
         <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
           <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-700">
-            <strong>A IA analisa somente os dados enviados.</strong> Ela nunca inventa números
-            e sempre separa fatos observados, hipóteses, recomendações e limitações da análise.
-            Tempo estimado: 1-3 minutos dependendo do volume de dados.
+            {analysisMode === 'local' ? (
+              <>
+                <strong>Modo sem IA selecionado.</strong> A análise roda localmente no servidor e não consome tokens de API.
+                Tempo estimado: alguns segundos dependendo do volume de dados.
+              </>
+            ) : (
+              <>
+                <strong>A IA analisa somente os dados enviados.</strong> Ela nunca inventa números
+                e sempre separa fatos observados, hipóteses, recomendações e limitações da análise.
+                Tempo estimado: 1-3 minutos dependendo do volume de dados.
+              </>
+            )}
           </div>
         </div>
 
@@ -217,8 +278,8 @@ export default function NewAnalysisPage() {
             disabled={files.length === 0}
             className="gap-2"
           >
-            <Zap className="w-4 h-4" />
-            Analisar com IA
+            {analysisMode === 'local' ? <Calculator className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+            {analysisMode === 'local' ? 'Analisar sem IA' : 'Analisar com IA'}
           </Button>
           <Button
             type="button"

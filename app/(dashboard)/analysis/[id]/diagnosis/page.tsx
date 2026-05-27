@@ -148,7 +148,7 @@ export default async function DiagnosisPage({ params }: { params: Promise<{ id: 
           </h3>
           <div className="space-y-3">
             {bottlenecks.map((item, i) => (
-              <IssueCard key={i} item={item} type="bottleneck" />
+              <IssueCard key={i} item={item} />
             ))}
           </div>
         </div>
@@ -163,7 +163,7 @@ export default async function DiagnosisPage({ params }: { params: Promise<{ id: 
           </h3>
           <div className="space-y-3">
             {risks.map((item, i) => (
-              <IssueCard key={i} item={item} type="risk" />
+              <IssueCard key={i} item={item} />
             ))}
           </div>
         </div>
@@ -172,7 +172,7 @@ export default async function DiagnosisPage({ params }: { params: Promise<{ id: 
   )
 }
 
-function IssueCard({ item, type }: { item: { title: string; description: string; severity: string; evidence: string; impact: string }; type: string }) {
+function IssueCard({ item }: { item: { title: string; description: string; severity: string; evidence: string; impact: string } }) {
   const severityConfig = {
     high: { label: 'Alta', class: 'bg-red-50 border-red-200 text-red-700', badge: 'bg-red-100 text-red-700' },
     medium: { label: 'Média', class: 'bg-amber-50 border-amber-200 text-amber-700', badge: 'bg-amber-100 text-amber-700' },

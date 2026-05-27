@@ -8,7 +8,7 @@ import {
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SummaryCards, ChartRenderer } from './dashboard-charts'
-import { getStatusColor, getTrendIcon } from '@/lib/utils'
+import { getStatusColor } from '@/lib/utils'
 import type { Analysis, Indicator } from '@/types'
 
 export function ExecutiveSummaryView({ analysis }: { analysis: Analysis }) {
