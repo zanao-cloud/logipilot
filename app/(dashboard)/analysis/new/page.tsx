@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, AlertCircle, Zap, Info, BarChart2 } from 'lucide-react'
+import { Upload, X, AlertCircle, Info, BarChart2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -31,6 +31,14 @@ export default function NewAnalysisPage() {
   const [stage, setStage] = useState<ProcessingStage>('upload')
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const t = searchParams.get('title')
+    const c = searchParams.get('context')
+    if (t) setTitle(t)
+    if (c) setContext(c)
+  }, [searchParams])
 
   const onDrop = useCallback((accepted: File[]) => {
     setFiles(prev => {
