@@ -5,6 +5,7 @@ import { Send, Bot, User, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
 import type { ChatMessage } from '@/types'
+import ReactMarkdown from 'react-markdown'
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const [analysisId, setAnalysisId] = useState<string>('')
@@ -123,7 +124,19 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   ? 'bg-[#1E3A5F] text-white rounded-tr-sm'
                   : 'bg-slate-50 border border-slate-100 text-slate-700 rounded-tl-sm'
               }`}>
-                <div className="whitespace-pre-wrap">{msg.content}</div>
+                {msg.role === 'user' ? (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                ) : (
+                  <div className="prose prose-sm prose-slate max-w-none
+                    prose-headings:font-semibold prose-headings:text-slate-800 prose-headings:mb-1 prose-headings:mt-3 first:prose-headings:mt-0
+                    prose-h3:text-sm prose-h2:text-sm prose-h1:text-sm
+                    prose-p:text-slate-700 prose-p:my-1
+                    prose-strong:text-slate-800 prose-strong:font-semibold
+                    prose-ul:my-1 prose-ul:pl-4 prose-li:my-0.5
+                    prose-ol:my-1 prose-ol:pl-4">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                )}
               </div>
               <span className="text-xs text-slate-400 mt-1 px-1">{formatDate(msg.created_at)}</span>
             </div>
