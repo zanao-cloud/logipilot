@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ id: analysis.id, status: 'completed' })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Erro desconhecido'
+    const raw = err instanceof Error ? err.message : 'Erro desconhecido'
+    const message = friendlyError(raw)
     await supabase
       .from('analyses')
       .update({ status: 'error', error_message: message, updated_at: new Date().toISOString() })
@@ -57,6 +58,23 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: message }, { status: 500 })
   }
+}
+
+function friendlyError(msg: string): string {
+  const m = msg.toLowerCase()
+  if (m.includes('quota') || m.includes('429') || m.includes('resource_exhausted')) {
+    return 'Limite da API de IA atingido. Aguarde alguns segundos e tente novamente.'
+  }
+  if (m.includes('api key') || m.includes('invalid key') || m.includes('permission')) {
+    return 'Chave de API inválida ou sem permissão. Verifique a configuração.'
+  }
+  if (m.includes('timeout') || m.includes('deadline')) {
+    return 'Tempo limite excedido. Tente com arquivos menores ou menos arquivos.'
+  }
+  if (m.includes('json') || m.includes('parse')) {
+    return 'A IA não conseguiu processar os dados. Tente novamente.'
+  }
+  return msg.length > 200 ? 'Erro ao processar análise. Tente novamente.' : msg
 }
 
 async function parseFileForAI(file: File) {
