@@ -88,6 +88,46 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ id: newUser.user.id })
 }
 
+// PATCH — edit team member (gestor only)
+export async function PATCH(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: myProfile } = await supabase
+    .from('user_profiles')
+    .select('organization_id, role')
+    .eq('id', user.id)
+    .single()
+
+  if (!myProfile || myProfile.role !== 'gestor') {
+    return NextResponse.json({ error: 'Apenas gestores podem editar membros' }, { status: 403 })
+  }
+
+  const { memberId, full_name, phone, vehicle_plate } = await request.json()
+  if (!memberId) return NextResponse.json({ error: 'memberId obrigatório' }, { status: 400 })
+
+  const admin = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  const { error } = await admin
+    .from('user_profiles')
+    .update({
+      ...(full_name ? { full_name } : {}),
+      phone: phone ?? null,
+      vehicle_plate: vehicle_plate ?? null,
+    })
+    .eq('id', memberId)
+    .eq('organization_id', myProfile.organization_id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true })
+}
+
 // DELETE — remove team member
 export async function DELETE(request: NextRequest) {
   const supabase = await createClient()
