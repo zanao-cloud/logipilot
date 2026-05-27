@@ -22,16 +22,40 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    let { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+    // Auto-confirm and retry if email not confirmed
+    if (error) {
+      const msg = error.message.toLowerCase()
+      if (msg.includes('not confirmed')) {
+        const res = await fetch('/api/auth/confirm-existing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        })
+        if (res.ok) {
+          const retry = await supabase.auth.signInWithPassword({ email, password })
+          data = retry.data
+          error = retry.error
+        }
+      }
+    }
 
     if (error) {
-      setError('E-mail ou senha incorretos.')
+      const msg = error.message.toLowerCase()
+      if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('wrong')) {
+        setError('E-mail ou senha incorretos.')
+      } else {
+        setError(`Erro: ${error.message}`)
+      }
       setLoading(false)
       return
     }
 
-    router.push('/dashboard')
-    router.refresh()
+    if (data.session) {
+      router.push('/dashboard')
+      router.refresh()
+    }
   }
 
   return (
