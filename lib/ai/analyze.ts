@@ -1,18 +1,15 @@
-import { GoogleGenAI } from '@google/genai'
+import Groq from 'groq-sdk'
 import type { AnalysisResult } from '@/types'
 
-function getAI() {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY não configurada. Adicione a chave no .env.local.')
-  }
-
-  return new GoogleGenAI({ apiKey })
+function getGroq() {
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) throw new Error('GROQ_API_KEY não configurada.')
+  return new Groq({ apiKey })
 }
 
-const SYSTEM_PROMPT = `Você é um analista operacional júnior especializado em diagnóstico de dados empresariais.
+const SYSTEM_PROMPT = `Você é um analista operacional especializado em diagnóstico de dados empresariais.
 
-Sua função é analisar dados fornecidos pelo usuário (planilhas, relatórios, imagens, CSVs, PDFs) e gerar uma análise estruturada.
+Sua função é analisar dados fornecidos pelo usuário (planilhas, relatórios, CSVs, PDFs) e gerar uma análise estruturada.
 
 REGRAS FUNDAMENTAIS:
 1. Use APENAS os dados fornecidos. NUNCA invente números, métricas ou informações não presentes nos dados.
@@ -22,7 +19,7 @@ REGRAS FUNDAMENTAIS:
 5. Para dashboards, extraia apenas dados que realmente existem nos arquivos.
 6. Retorne APENAS o JSON válido pedido, sem texto adicional antes ou depois.`
 
-const RESULT_SCHEMA = `Retorne SOMENTE este JSON (sem markdown, sem blocos de código, sem texto fora do JSON):
+const RESULT_SCHEMA = `Retorne SOMENTE este JSON válido (sem markdown, sem blocos de código):
 {
   "executive_summary": {
     "title": "string",
@@ -78,49 +75,35 @@ interface FileInput {
 }
 
 export async function analyzeData(files: FileInput[], userContext?: string): Promise<AnalysisResult> {
-  const ai = getAI()
-  const textParts: Array<{ text: string }> = []
-  const inlineParts: Array<{ inlineData: { mimeType: string; data: string } }> = []
+  const groq = getGroq()
 
-  textParts.push({
-    text: `${SYSTEM_PROMPT}\n\n${RESULT_SCHEMA}\n\n${userContext ? `Contexto fornecido: ${userContext}\n\n` : ''}Analise os seguintes dados:`,
-  })
+  const parts: string[] = [
+    `${SYSTEM_PROMPT}\n\n${RESULT_SCHEMA}`,
+    userContext ? `Contexto fornecido pelo usuário: ${userContext}` : '',
+    'Analise os seguintes dados:',
+  ].filter(Boolean)
 
   for (const file of files) {
-    if (file.isImage && file.imageBase64) {
-      textParts.push({ text: `\n--- Arquivo: ${file.name} ---` })
-      inlineParts.push({
-        inlineData: {
-          mimeType: file.imageMediaType || 'image/jpeg',
-          data: file.imageBase64,
-        },
-      })
-    } else {
-      textParts.push({ text: `\n--- Arquivo: ${file.name} (${file.type}) ---\n${file.content}` })
-    }
+    parts.push(`\n--- Arquivo: ${file.name} (${file.type}) ---\n${file.content}`)
   }
 
-  const allParts = [...textParts, ...inlineParts]
-
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
-    contents: [{ role: 'user', parts: allParts }],
-    config: {
-      maxOutputTokens: 8192,
-      temperature: 0.1,
-      responseMimeType: 'application/json',
-    },
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [{ role: 'user', content: parts.join('\n') }],
+    max_tokens: 8192,
+    temperature: 0.1,
+    response_format: { type: 'json_object' },
   })
 
-  const text = response.text ?? ''
-  const cleanedText = text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '')
-  const jsonMatch = cleanedText.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('IA não retornou JSON válido. Tente novamente.')
+  const text = completion.choices[0]?.message?.content ?? ''
+  if (!text) throw new Error('IA não retornou resposta. Tente novamente.')
 
   try {
-    return JSON.parse(jsonMatch[0]) as AnalysisResult
+    return JSON.parse(text) as AnalysisResult
   } catch {
-    throw new Error('IA retornou JSON mal formatado. Tente novamente com uma planilha menor ou mais limpa.')
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('IA não retornou JSON válido. Tente novamente.')
+    return JSON.parse(jsonMatch[0]) as AnalysisResult
   }
 }
 
@@ -129,7 +112,8 @@ export async function chatWithData(
   messages: { role: 'user' | 'assistant'; content: string }[],
   userMessage: string
 ): Promise<string> {
-  const ai = getAI()
+  const groq = getGroq()
+
   const systemContext = `Você é um assistente de análise operacional. Responda perguntas sobre esta análise de dados.
 
 Análise disponível (JSON):
@@ -141,21 +125,16 @@ REGRAS:
 - Se não houver dados suficientes para responder, diga claramente
 - Separe fatos de hipóteses quando relevante`
 
-  const history = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' as const : 'user' as const,
-    parts: [{ text: m.content }],
-  }))
-
-  const chat = ai.chats.create({
-    model: 'gemini-2.0-flash',
-    history: [
-      { role: 'user', parts: [{ text: systemContext }] },
-      { role: 'model', parts: [{ text: 'Entendido. Estou pronto para responder perguntas sobre esta análise.' }] },
-      ...history,
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: systemContext },
+      ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      { role: 'user', content: userMessage },
     ],
-    config: { maxOutputTokens: 2048, temperature: 0.2 },
+    max_tokens: 2048,
+    temperature: 0.2,
   })
 
-  const response = await chat.sendMessage({ message: userMessage })
-  return response.text ?? 'Não consegui processar sua pergunta.'
+  return completion.choices[0]?.message?.content ?? 'Não consegui processar sua pergunta.'
 }

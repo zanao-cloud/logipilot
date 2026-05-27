@@ -182,14 +182,14 @@ function friendlyDatabaseError(msg: string): string {
 
 function friendlyError(msg: string): string {
   const m = msg.toLowerCase()
-  if (m.includes('quota') || m.includes('429') || m.includes('resource_exhausted')) {
+  if (m.includes('quota') || m.includes('429') || m.includes('resource_exhausted') || m.includes('rate_limit')) {
     return 'Limite da API de IA atingido. Aguarde alguns segundos e tente novamente.'
   }
-  if (m.includes('api key') || m.includes('invalid key') || m.includes('permission')) {
+  if (m.includes('api key') || m.includes('invalid key') || m.includes('permission') || m.includes('401')) {
     return 'Chave de API inválida ou sem permissão. Verifique a configuração.'
   }
-  if (m.includes('gemini_api_key')) {
-    return 'Chave do Gemini não configurada. Verifique o arquivo .env.local.'
+  if (m.includes('groq_api_key') || m.includes('groq_api_key não configurada')) {
+    return 'Chave do Groq não configurada. Verifique as variáveis de ambiente.'
   }
   if (m.includes('não consegui ler a planilha') || m.includes('planilha vazia')) {
     return msg
