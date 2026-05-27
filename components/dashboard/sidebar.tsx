@@ -63,9 +63,12 @@ export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const { profile: clientProfile } = useProfile()
-  const profile = serverProfile ?? clientProfile
-  const profileLoading = !serverProfile && !clientProfile
+  const { profile: clientProfile, loading: clientLoading } = useProfile()
+
+  // serverProfile !== undefined means the server already ran the query (even if result is null)
+  const serverAnswered = serverProfile !== undefined
+  const profile = serverAnswered ? (serverProfile ?? clientProfile) : clientProfile
+  const profileLoading = !serverAnswered && clientLoading
 
   async function handleLogout() {
     await supabase.auth.signOut()
