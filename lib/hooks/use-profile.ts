@@ -18,7 +18,7 @@ export function useProfile() {
 
   useEffect(() => {
     fetch('/api/profile')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : null)
       .then(data => { setProfile(data); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])

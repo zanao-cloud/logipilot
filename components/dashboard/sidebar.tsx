@@ -63,7 +63,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const { profile } = useProfile()
+  const { profile, loading: profileLoading } = useProfile()
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -120,6 +120,26 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-5 overflow-y-auto">
         {navGroups.map((group, gi) => {
+          const isGestaoGroup = group.items.every(i => i.gestorOnly)
+
+          // While loading: show skeleton for gestor-only groups
+          if (profileLoading && isGestaoGroup) {
+            return (
+              <div key={gi}>
+                {group.title && (
+                  <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500 select-none">
+                    {group.title}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {group.items.map((_, i) => (
+                    <div key={i} className="h-9 mx-1 rounded-xl bg-white/5 animate-pulse" />
+                  ))}
+                </div>
+              </div>
+            )
+          }
+
           const visible = group.items.filter(i => !i.gestorOnly || profile?.role === 'gestor')
           if (!visible.length) return null
           return (
