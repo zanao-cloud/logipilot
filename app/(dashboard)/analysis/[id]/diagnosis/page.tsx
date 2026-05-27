@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Brain, CheckCircle, Lightbulb, Target, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import type { Analysis } from '@/types'
@@ -10,7 +11,8 @@ export default async function DiagnosisPage({ params }: { params: Promise<{ id: 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
 
-  const { data: analysis } = await supabase
+  const admin = createAdminClient()
+  const { data: analysis } = await admin
     .from('analyses').select('*').eq('id', id).eq('user_id', user.id).single()
 
   if (!analysis || !(analysis as Analysis).result) notFound()

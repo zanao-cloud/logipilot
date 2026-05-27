@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AnalysisNav } from '@/components/analysis/analysis-nav'
 
 export default async function AnalysisLayout({
@@ -15,7 +16,8 @@ export default async function AnalysisLayout({
 
   if (!user) notFound()
 
-  const { data: analysis } = await supabase
+  const admin = createAdminClient()
+  const { data: analysis } = await admin
     .from('analyses')
     .select('id, title, status')
     .eq('id', id)

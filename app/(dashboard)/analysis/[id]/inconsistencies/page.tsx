@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -11,7 +12,8 @@ export default async function InconsistenciesPage({ params }: { params: Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
 
-  const { data: analysis } = await supabase
+  const admin = createAdminClient()
+  const { data: analysis } = await admin
     .from('analyses').select('*').eq('id', id).eq('user_id', user.id).single()
 
   if (!analysis || !(analysis as Analysis).result) notFound()

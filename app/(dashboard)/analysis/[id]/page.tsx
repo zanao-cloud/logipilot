@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { ExecutiveSummaryView } from '@/components/analysis/executive-summary'
 import type { Analysis } from '@/types'
 
@@ -9,7 +10,8 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
 
-  const { data: analysis } = await supabase
+  const admin = createAdminClient()
+  const { data: analysis } = await admin
     .from('analyses')
     .select('*')
     .eq('id', id)
