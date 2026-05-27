@@ -95,7 +95,7 @@ export async function analyzeData(files: FileInput[], userContext?: string): Pro
   const allParts = [...textParts, ...inlineParts]
 
   const response = await ai.models.generateContent({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash',
     contents: [{ role: 'user', parts: allParts }],
     config: {
       maxOutputTokens: 8192,
@@ -132,7 +132,7 @@ REGRAS:
   }))
 
   const chat = ai.chats.create({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash',
     history: [
       { role: 'user', parts: [{ text: systemContext }] },
       { role: 'model', parts: [{ text: 'Entendido. Estou pronto para responder perguntas sobre esta análise.' }] },

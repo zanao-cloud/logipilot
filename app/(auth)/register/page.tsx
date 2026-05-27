@@ -8,9 +8,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Building2 } from 'lucide-react'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
+  const [company, setCompany] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -21,38 +23,20 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (password.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return }
     setLoading(true)
 
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.')
-      setLoading(false)
-      return
-    }
-
-    // Create user via server route (auto-confirms email, no confirmation required)
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, company }),
     })
 
     const data = await res.json()
+    if (!res.ok) { setError(data.error || 'Erro ao criar conta.'); setLoading(false); return }
 
-    if (!res.ok) {
-      setError(data.error || 'Erro ao criar conta.')
-      setLoading(false)
-      return
-    }
-
-    // Sign in immediately after creation
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (signInError) {
-      setError('Conta criada! Faça login com suas credenciais.')
-      setLoading(false)
-      router.push('/login')
-      return
-    }
+    if (signInError) { router.push('/login'); return }
 
     router.push('/dashboard')
     router.refresh()
@@ -61,19 +45,34 @@ export default function RegisterPage() {
   return (
     <div className="w-full max-w-md">
       <div className="bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">Criar conta</h1>
-          <p className="text-slate-500 text-sm mt-2">Comece a analisar seus dados operacionais</p>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div className="w-9 h-9 bg-[#1E3A5F]/10 rounded-lg flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-[#1E3A5F]" />
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-slate-900">Criar conta de Gestor</h1>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-xs text-blue-700 mb-6">
+          <strong>Conta de Gestor</strong> — acesso completo ao sistema. Você poderá adicionar operadores e motoristas depois.
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Nome completo"
+            label="Seu nome"
             type="text"
-            placeholder="Seu nome"
+            placeholder="Nome completo"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+          />
+          <Input
+            label="Nome da transportadora"
+            type="text"
+            placeholder="Ex: Rápido Transportes Ltda"
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
           />
           <Input
             label="E-mail"
@@ -99,15 +98,13 @@ export default function RegisterPage() {
           )}
 
           <Button type="submit" className="w-full" size="lg" loading={loading}>
-            Criar conta grátis
+            Criar conta
           </Button>
         </form>
 
         <p className="text-center text-sm text-slate-500 mt-6">
           Já tem conta?{' '}
-          <Link href="/login" className="text-[#1E3A5F] font-medium hover:underline">
-            Entrar
-          </Link>
+          <Link href="/login" className="text-[#1E3A5F] font-medium hover:underline">Entrar</Link>
         </p>
       </div>
     </div>
