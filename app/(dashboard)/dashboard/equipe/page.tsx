@@ -54,6 +54,11 @@ export default function EquipePage() {
     const data = await res.json()
     if (!res.ok) { setError(data.error); setAdding(false); return }
 
+    const loginUrl = form.role === 'motorista'
+      ? `${window.location.origin}/motorista/login`
+      : `${window.location.origin}/operador/login`
+    alert(`Membro adicionado!\n\nEnvie este link de acesso para ${form.full_name}:\n${loginUrl}\n\nE-mail: ${form.email}\nSenha: ${form.password}`)
+
     await fetchTeam()
     setShowForm(false)
     setForm({ full_name: '', email: '', password: '', role: 'operador', phone: '', vehicle_plate: '' })

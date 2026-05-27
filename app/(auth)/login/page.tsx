@@ -8,35 +8,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Building2, Users, Truck } from 'lucide-react'
-import { cn } from '@/lib/utils'
-
-const ROLES = [
-  {
-    id: 'gestor',
-    label: 'Gestor',
-    description: 'Acesso completo, relatórios e equipe',
-    icon: Building2,
-    redirect: '/dashboard',
-  },
-  {
-    id: 'operador',
-    label: 'Operador',
-    description: 'Análises e dados operacionais',
-    icon: Users,
-    redirect: '/operador',
-  },
-  {
-    id: 'motorista',
-    label: 'Motorista',
-    description: 'Minhas entregas e desempenho',
-    icon: Truck,
-    redirect: '/motorista',
-  },
-]
+import { Building2, Zap, Users, Truck } from 'lucide-react'
 
 export default function LoginPage() {
-  const [selectedRole, setSelectedRole] = useState<string>('gestor')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -79,91 +53,93 @@ export default function LoginPage() {
       return
     }
 
-    // Fetch profile to get real role and redirect correctly
     const profileRes = await fetch('/api/profile')
     const profile = await profileRes.json()
 
-    if (!profile || !profile.role) {
-      // No profile yet — legacy user, send to dashboard
-      router.push('/dashboard')
-      router.refresh()
-      return
+    const redirectMap: Record<string, string> = {
+      gestor: '/dashboard',
+      operador: '/operador',
+      motorista: '/motorista',
     }
 
-    const roleConfig = ROLES.find(r => r.id === profile.role)
-    router.push(roleConfig?.redirect ?? '/dashboard')
+    router.push(redirectMap[profile?.role] ?? '/dashboard')
     router.refresh()
   }
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">Entrar no LogiPilot AI</h1>
-          <p className="text-slate-500 text-sm mt-1">Selecione seu perfil de acesso</p>
-        </div>
-
-        {/* Role selector */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          {ROLES.map((role) => (
-            <button
-              key={role.id}
-              type="button"
-              onClick={() => setSelectedRole(role.id)}
-              className={cn(
-                'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all',
-                selectedRole === role.id
-                  ? 'border-[#1E3A5F] bg-[#1E3A5F]/5'
-                  : 'border-slate-100 hover:border-slate-200'
-              )}
-            >
-              <role.icon className={cn('w-5 h-5', selectedRole === role.id ? 'text-[#1E3A5F]' : 'text-slate-400')} />
-              <span className={cn('text-xs font-semibold', selectedRole === role.id ? 'text-[#1E3A5F]' : 'text-slate-500')}>
-                {role.label}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <p className="text-xs text-center text-slate-400 mb-5 -mt-3">
-          {ROLES.find(r => r.id === selectedRole)?.description}
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="E-mail"
-            type="email"
-            placeholder="seu@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <Input
-            label="Senha"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-              {error}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-br from-[#0F1B2D] to-[#1E3A5F] px-8 py-8">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-white" />
             </div>
-          )}
+            <span className="text-white font-bold text-sm">LogiPilot AI</span>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-4">
+            <Building2 className="w-6 h-6 text-emerald-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Portal Empresarial</h1>
+          <p className="text-slate-300 text-sm mt-1">Gestão, análises e relatórios da sua frota</p>
+        </div>
 
-          <Button type="submit" className="w-full" size="lg" loading={loading}>
-            Entrar como {ROLES.find(r => r.id === selectedRole)?.label}
-          </Button>
-        </form>
+        <div className="px-8 py-8">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              label="E-mail"
+              type="email"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input
+              label="Senha"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
 
-        <p className="text-center text-sm text-slate-500 mt-6">
-          Empresa nova?{' '}
-          <Link href="/register" className="text-[#1E3A5F] font-medium hover:underline">
-            Criar conta de gestor
-          </Link>
-        </p>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" size="lg" loading={loading}>
+              Entrar
+            </Button>
+          </form>
+
+          <p className="text-center text-sm text-slate-500 mt-6">
+            Empresa nova?{' '}
+            <Link href="/register" className="text-[#1E3A5F] font-medium hover:underline">
+              Criar conta grátis
+            </Link>
+          </p>
+
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <p className="text-xs text-slate-400 text-center mb-3">Outros acessos</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/operador/login"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Portal Operador
+              </Link>
+              <Link
+                href="/motorista/login"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <Truck className="w-3.5 h-3.5" />
+                App Motorista
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -96,15 +96,26 @@ async function parseFileForAI(file: File) {
 
   if (ext === 'xlsx' || ext === 'xls' || type.includes('spreadsheet')) {
     const buffer = await file.arrayBuffer()
-    const workbook = XLSX.read(buffer, { type: 'array' })
-    const parts: string[] = []
-    for (const sheetName of workbook.SheetNames) {
-      const sheet = workbook.Sheets[sheetName]
-      const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false })
-      const rows = csv.split('\n').filter(Boolean)
-      parts.push(`=== Planilha: ${sheetName} (${rows.length - 1} linhas) ===\n${rows.slice(0, 200).join('\n')}`)
+    const data = new Uint8Array(buffer)
+    try {
+      const workbook = XLSX.read(data, { type: 'array', cellFormula: false, cellHTML: false, cellDates: false })
+      const parts: string[] = []
+      for (const sheetName of workbook.SheetNames) {
+        const sheet = workbook.Sheets[sheetName]
+        try {
+          const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false })
+          const rows = csv.split('\n').filter(Boolean)
+          parts.push(`=== Planilha: ${sheetName} (${rows.length - 1} linhas) ===\n${rows.slice(0, 200).join('\n')}`)
+        } catch {
+          const json = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' })
+          const rows = (json as unknown[][]).filter(r => r.some(c => c !== ''))
+          parts.push(`=== Planilha: ${sheetName} (${rows.length} linhas) ===\n${rows.map(r => r.join(',')).slice(0, 200).join('\n')}`)
+        }
+      }
+      return { name, type, content: parts.join('\n\n') || `[Planilha vazia: ${name}]` }
+    } catch {
+      return { name, type, content: `[Planilha: ${name} - não foi possível ler o conteúdo]` }
     }
-    return { name, type, content: parts.join('\n\n') }
   }
 
   if (ext === 'csv' || type === 'text/csv') {
