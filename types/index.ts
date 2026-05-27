@@ -1,0 +1,125 @@
+export type AnalysisStatus = 'pending' | 'processing' | 'completed' | 'error'
+
+export interface UploadedFile {
+  id: string
+  name: string
+  type: string
+  size: number
+  url?: string
+  content?: string
+}
+
+export interface AnalysisResult {
+  executive_summary: {
+    title: string
+    overview: string
+    key_highlights: string[]
+    period?: string
+    data_sources: string[]
+  }
+  indicators: Indicator[]
+  dashboard_data?: DashboardData
+  diagnosis: AIDiagnosis
+  bottlenecks: Issue[]
+  risks: Issue[]
+  inconsistencies: Inconsistency[]
+  opportunities: Opportunity[]
+  action_plan: ActionItem[]
+  limitations: string[]
+}
+
+export interface Indicator {
+  name: string
+  value: string | number
+  unit?: string
+  trend?: 'up' | 'down' | 'stable'
+  trend_value?: string
+  category: string
+  status: 'good' | 'warning' | 'critical' | 'neutral'
+}
+
+export interface DashboardData {
+  charts: Chart[]
+  summary_cards: SummaryCard[]
+}
+
+export interface Chart {
+  id: string
+  title: string
+  type: 'bar' | 'line' | 'pie' | 'area' | 'composed'
+  data: Record<string, unknown>[]
+  x_key?: string
+  y_keys?: string[]
+  colors?: string[]
+}
+
+export interface SummaryCard {
+  title: string
+  value: string
+  change?: string
+  trend?: 'up' | 'down' | 'stable'
+}
+
+export interface AIDiagnosis {
+  overall_assessment: string
+  health_score: number
+  observed_facts: string[]
+  hypotheses: string[]
+  recommendations: string[]
+  priority_areas: string[]
+}
+
+export interface Issue {
+  title: string
+  description: string
+  severity: 'high' | 'medium' | 'low'
+  evidence: string
+  impact: string
+}
+
+export interface Inconsistency {
+  title: string
+  description: string
+  location: string
+  suggestion: string
+  severity: 'high' | 'medium' | 'low'
+}
+
+export interface Opportunity {
+  title: string
+  description: string
+  potential_impact: string
+  effort: 'low' | 'medium' | 'high'
+  timeframe: string
+}
+
+export interface ActionItem {
+  priority: number
+  title: string
+  description: string
+  responsible?: string
+  deadline: string
+  expected_result: string
+  effort: 'low' | 'medium' | 'high'
+  category: 'immediate' | 'short_term' | 'medium_term'
+}
+
+export interface Analysis {
+  id: string
+  user_id: string
+  title: string
+  status: AnalysisStatus
+  created_at: string
+  updated_at: string
+  files: UploadedFile[]
+  result?: AnalysisResult
+  error_message?: string
+}
+
+export interface ChatMessage {
+  id: string
+  analysis_id: string
+  role: 'user' | 'assistant'
+  content: string
+  created_at: string
+}
