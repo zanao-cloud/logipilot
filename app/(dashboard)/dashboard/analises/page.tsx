@@ -7,14 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, getFileIcon } from '@/lib/utils'
-import type { Analysis } from '@/types'
-
-interface Member {
-  id: string
-  full_name: string
-  role: 'gestor' | 'operador' | 'motorista'
-  vehicle_plate?: string
-}
+import type { Analysis, Member } from '@/types'
 
 const statusConfig = {
   completed:  { label: 'Concluída',   variant: 'success'  as const },

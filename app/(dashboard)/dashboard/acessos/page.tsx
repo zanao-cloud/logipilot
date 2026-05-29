@@ -4,22 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   KeyRound, UserPlus, Copy, Check, Eye, EyeOff,
   Truck, Users, ExternalLink, X, Calendar, Phone,
-  Shield, Trash2, Pencil,
+  Shield, Trash2, Pencil, Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
-
-interface Member {
-  id: string
-  full_name: string
-  role: 'gestor' | 'operador' | 'motorista'
-  phone?: string
-  vehicle_plate?: string
-  created_at: string
-}
+import type { Member } from '@/types'
 
 interface Credentials {
   name: string
@@ -53,6 +45,7 @@ export default function AcessosPage() {
   const [editForm, setEditForm]   = useState({ full_name: '', phone: '', vehicle_plate: '' })
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
+  const [search, setSearch] = useState('')
 
   const fetchTeam = useCallback(async () => {
     const res  = await fetch('/api/organization/team')
@@ -67,9 +60,11 @@ export default function AcessosPage() {
     ? `${window.location.origin}${PORTAL[tab].path}`
     : PORTAL[tab].path
 
-  const visible = team.filter(m =>
-    tab === 'colaborador' ? m.role === 'operador' : m.role === 'motorista'
-  )
+  const visible = team.filter(m => {
+    const matchTab = tab === 'colaborador' ? m.role === 'operador' : m.role === 'motorista'
+    const matchSearch = !search || m.full_name.toLowerCase().includes(search.toLowerCase())
+    return matchTab && matchSearch
+  })
 
   function copyText(text: string, key: string) {
     navigator.clipboard.writeText(text)
@@ -195,6 +190,18 @@ export default function AcessosPage() {
         ))}
       </div>
 
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Buscar por nome..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/10 outline-none"
+        />
+      </div>
+
       {/* Portal URL card */}
       <div className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-3 mb-6 ${
         isColaborador
@@ -261,7 +268,7 @@ export default function AcessosPage() {
                   <div className="flex flex-wrap items-center gap-3 mt-0.5 text-xs text-slate-400">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      Desde {formatDate(member.created_at)}
+                      Desde {member.created_at ? formatDate(member.created_at) : '—'}
                     </span>
                     {member.phone && (
                       <span className="flex items-center gap-1">

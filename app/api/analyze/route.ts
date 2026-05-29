@@ -965,17 +965,6 @@ function isSpreadsheetLike(file: ParsedAIFile): boolean {
   return name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv') || file.type.includes('spreadsheet') || file.type === 'text/csv'
 }
 
-function estimateRows(content: string): number {
-  const structuredMatches = [...content.matchAll(/Amostra estruturada \(\d+ de (\d+) linhas de dados\)/g)]
-  const arrayMatches = [...content.matchAll(/Amostra \(\d+ de (\d+) linhas\)/g)]
-  const csvMatches = [...content.matchAll(/Linhas detectadas: (\d+)/g)]
-  return [...structuredMatches, ...arrayMatches, ...csvMatches].reduce((sum, match) => sum + Number(match[1] || 0), 0)
-}
-
-function estimateSheets(content: string): number {
-  return (content.match(/=== Aba:/g) || []).length
-}
-
 function estimateSlides(content: string): number {
   return Number(content.match(/Slides detectados: (\d+)/)?.[1] || 0)
 }

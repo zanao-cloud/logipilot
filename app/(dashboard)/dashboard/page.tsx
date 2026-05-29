@@ -12,13 +12,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, getFileIcon } from '@/lib/utils'
 import { useProfile } from '@/lib/hooks/use-profile'
-import type { Analysis } from '@/types'
-
-interface Member {
-  id: string
-  full_name: string
-  role: 'gestor' | 'operador' | 'motorista'
-}
+import type { Analysis, Member } from '@/types'
 
 export default function DashboardPage() {
   const { profile } = useProfile()

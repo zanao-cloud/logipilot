@@ -51,11 +51,6 @@ export function getStatusColor(status: 'good' | 'warning' | 'critical' | 'neutra
   }[status]
 }
 
-export function getTrendIcon(trend?: 'up' | 'down' | 'stable') {
-  if (!trend) return ''
-  return { up: '↑', down: '↓', stable: '→' }[trend]
-}
-
 export function getHealthScoreColor(score: number) {
   if (score >= 70) return 'text-emerald-600'
   if (score >= 40) return 'text-amber-600'

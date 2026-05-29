@@ -1,5 +1,14 @@
 export type AnalysisStatus = 'pending' | 'processing' | 'completed' | 'error'
 
+export interface Member {
+  id: string
+  full_name: string
+  role: 'gestor' | 'operador' | 'motorista'
+  phone?: string
+  vehicle_plate?: string
+  created_at?: string
+}
+
 export interface UploadedFile {
   id: string
   name: string
