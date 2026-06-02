@@ -60,12 +60,14 @@ export default function MotoristaDetailPage() {
 
   useEffect(() => {
     fetch('/api/organization/team')
-      .then(r => r.json())
+      .then(async r => r.ok ? r.json() : null)
       .then(data => {
-        const found = (data || []).find((m: Motorista) => m.id === id)
+        const arr = Array.isArray(data) ? data : []
+        const found = arr.find((m: Motorista) => m.id === id)
         setMotorista(found || null)
         setLoading(false)
       })
+      .catch(() => setLoading(false))
   }, [id])
 
   useEffect(() => {

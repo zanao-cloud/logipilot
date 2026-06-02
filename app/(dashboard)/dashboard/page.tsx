@@ -31,8 +31,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (isGestor) {
       fetch('/api/organization/team')
-        .then(r => r.json())
-        .then(data => setTeam(data || []))
+        .then(async r => r.ok ? r.json() : null)
+        .then(data => setTeam(Array.isArray(data) ? data : []))
         .catch(() => {})
     }
   }, [isGestor])

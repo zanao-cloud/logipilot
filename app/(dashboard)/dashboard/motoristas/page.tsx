@@ -52,9 +52,10 @@ export default function MotoristasPage() {
 
   useEffect(() => {
     fetch('/api/organization/team')
-      .then(r => r.json())
+      .then(async r => r.ok ? r.json() : null)
       .then(data => {
-        setMotoristas((data || []).filter((m: { role: string }) => m.role === 'motorista'))
+        const arr = Array.isArray(data) ? data : []
+        setMotoristas(arr.filter((m: { role: string }) => m.role === 'motorista'))
         setLoading(false)
       })
       .catch(() => setLoading(false))

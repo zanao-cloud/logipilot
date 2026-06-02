@@ -55,6 +55,7 @@ export default function AcessosPage() {
   const [tab, setTab]               = useState<Tab>('colaborador')
   const [team, setTeam]             = useState<Member[]>([])
   const [loading, setLoading]       = useState(true)
+  const [forbidden, setForbidden]   = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm]             = useState(emptyForm)
   const [showPass, setShowPass]     = useState(false)
@@ -69,10 +70,22 @@ export default function AcessosPage() {
   const [search, setSearch]         = useState('')
 
   const fetchTeam = useCallback(async () => {
-    const res  = await fetch('/api/organization/team')
-    const data = await res.json()
-    setTeam(data || [])
-    setLoading(false)
+    try {
+      const res  = await fetch('/api/organization/team')
+      if (!res.ok) {
+        setForbidden(res.status === 403)
+        setTeam([])
+        setLoading(false)
+        return
+      }
+      const data = await res.json()
+      setTeam(Array.isArray(data) ? data : [])
+      setForbidden(false)
+    } catch {
+      setTeam([])
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchTeam() }, [fetchTeam])
@@ -151,6 +164,30 @@ export default function AcessosPage() {
   const accentColor   = isColaborador ? '#f59e0b' : '#38bdf8'
   const accentGlow    = isColaborador ? 'rgba(245,158,11,0.15)' : 'rgba(56,189,248,0.15)'
   const accentBorder  = isColaborador ? 'rgba(245,158,11,0.25)' : 'rgba(56,189,248,0.25)'
+
+  if (forbidden) {
+    return (
+      <div className="min-h-screen bg-[#060d1a] p-8 flex items-start justify-center">
+        <div className="max-w-md w-full rounded-2xl p-8 mt-12 text-center"
+          style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
+            <Shield className="w-7 h-7 text-red-400" />
+          </div>
+          <h1 className="text-xl font-bold text-white mb-2">Acesso restrito a gestores</h1>
+          <p className="text-sm text-slate-400 mb-6">
+            Apenas a conta gestora da empresa pode criar acessos para colaboradores e motoristas.
+            Sua conta atual não tem essa permissão.
+          </p>
+          <a href="/login"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+            style={{ background: 'linear-gradient(135deg, #1d4ed8, #0ea5e9)' }}>
+            Entrar como gestor
+          </a>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#060d1a] p-8 max-w-3xl">
