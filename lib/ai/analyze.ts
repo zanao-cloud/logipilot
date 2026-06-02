@@ -117,12 +117,18 @@ export async function analyzeData(files: FileInput[], userContext?: string): Pro
     contents: [{ role: 'user', parts }],
     config: {
       temperature: 0.1,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 16384,
       responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 1024 },
     },
   })
 
-  return parseAIResult(response.text ?? '')
+  const text = response.text ?? ''
+  const finishReason = response.candidates?.[0]?.finishReason
+  if (finishReason && finishReason !== 'STOP') {
+    console.error('[gemini] non-STOP finishReason:', finishReason, 'usage:', response.usageMetadata)
+  }
+  return parseAIResult(text)
 }
 
 function parseAIResult(text: string): AnalysisResult {
@@ -137,8 +143,11 @@ function parseAIResult(text: string): AnalysisResult {
     return JSON.parse(cleaned) as AnalysisResult
   } catch {
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('IA não retornou JSON válido. Tente novamente.')
-    return JSON.parse(jsonMatch[0]) as AnalysisResult
+    if (jsonMatch) {
+      try { return JSON.parse(jsonMatch[0]) as AnalysisResult } catch { /* fall through */ }
+    }
+    console.error('[gemini] invalid JSON, last 400 chars:', cleaned.slice(-400))
+    throw new Error('IA não retornou JSON válido. Tente novamente.')
   }
 }
 
