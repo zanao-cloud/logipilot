@@ -8,11 +8,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Building2, Users, Truck } from 'lucide-react'
+import { Building2, Users, Truck, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -86,26 +87,56 @@ export default function LoginPage() {
         </div>
 
         <div className="px-8 py-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <Input
               label="E-mail"
               type="email"
+              name="email"
+              autoComplete="email"
+              inputMode="email"
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              aria-required="true"
             />
-            <Input
-              label="Senha"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div>
+              <label htmlFor="login-password" className="text-sm font-medium text-slate-700 block mb-1.5">
+                Senha
+              </label>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  aria-required="true"
+                  className="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/10 outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  aria-pressed={showPassword}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-blue-500 rounded p-0.5"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end -mt-2">
+              <Link href="/forgot-password" className="text-xs font-medium text-blue-600 hover:underline">
+                Esqueceu a senha?
+              </Link>
+            </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+              <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
                 {error}
               </div>
             )}
@@ -117,7 +148,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Empresa nova?{' '}
-            <Link href="/register" className="text-blue-600 font-medium hover:underline">
+            <Link href="/register?plan=free" className="text-blue-600 font-medium hover:underline">
               Criar conta grátis
             </Link>
           </p>

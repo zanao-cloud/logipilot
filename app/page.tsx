@@ -129,7 +129,7 @@ export default function LandingPage() {
             <Link href="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
               Entrar
             </Link>
-            <Link href="/register" className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition-all" style={{
+            <Link href="/register?plan=free" className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition-all" style={{
               background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
               boxShadow: '0 0 20px rgba(6,182,212,0.25)',
             }}>
@@ -182,7 +182,7 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-            <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all hover:opacity-90" style={{
+            <Link href="/register?plan=free" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all hover:opacity-90" style={{
               background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
               boxShadow: '0 0 50px rgba(6,182,212,0.35), 0 8px 24px rgba(0,0,0,0.4)',
             }}>
@@ -603,7 +603,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:bg-white/10" style={{
+              <Link href="/register?plan=free" className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:bg-white/10" style={{
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.1)',
               }}>
@@ -642,12 +642,18 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:opacity-90" style={{
-                background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                boxShadow: '0 8px 24px rgba(6,182,212,0.25)',
-              }}>
+              <a
+                href="https://wa.me/5511939369341?text=Ol%C3%A1%21%20Quero%20assinar%20o%20plano%20Pro%20do%20LogiPilot%20AI%20%28R%24%2097%2Fm%C3%AAs%29.%20Pode%20me%20ajudar%20a%20ativar%3F"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:opacity-90"
+                style={{
+                  background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                  boxShadow: '0 8px 24px rgba(6,182,212,0.25)',
+                }}
+              >
                 Assinar Pro
-              </Link>
+              </a>
             </div>
 
             {/* Enterprise */}
@@ -670,12 +676,18 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:bg-white/10" style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-              }}>
+              <a
+                href="https://wa.me/5511939369341?text=Ol%C3%A1%21%20Tenho%20interesse%20no%20plano%20Empresarial%20do%20LogiPilot%20AI%20%28R%24%20297%2Fm%C3%AAs%29.%20Posso%20conversar%20com%20vendas%3F"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:bg-white/10"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              >
                 Falar com vendas
-              </Link>
+              </a>
             </div>
           </div>
           <p className="text-center text-xs text-slate-700 mt-8">
@@ -714,7 +726,7 @@ export default function LandingPage() {
                 operacional completo em minutos.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 font-bold px-10 py-4 rounded-xl text-base text-white transition-all hover:opacity-90" style={{
+                <Link href="/register?plan=free" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 font-bold px-10 py-4 rounded-xl text-base text-white transition-all hover:opacity-90" style={{
                   background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
                   boxShadow: '0 0 48px rgba(6,182,212,0.3), 0 8px 24px rgba(0,0,0,0.4)',
                 }}>

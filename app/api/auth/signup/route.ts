@@ -7,6 +7,12 @@ export async function POST(request: NextRequest) {
   if (!email || !password || !name) {
     return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios' }, { status: 400 })
   }
+  if (password.length < 6) {
+    return NextResponse.json({ error: 'A senha deve ter pelo menos 6 caracteres.' }, { status: 400 })
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: 'E-mail inválido.' }, { status: 400 })
+  }
 
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,41 +20,25 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Determine site URL for email redirect
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://logipilot.vercel.app')
-
-  // Use public client's signUp so Supabase sends the confirmation email
-  const publicClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-
-  const { data: authData, error: authError } = await publicClient.auth.signUp({
+  // Create user pre-confirmed — bypasses Supabase email rate limit and avoids
+  // sending a confirmation message. The client signs in right after.
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
-    options: {
-      emailRedirectTo: `${siteUrl}/login`,
-      data: { full_name: name },
-    },
+    email_confirm: true,
+    user_metadata: { full_name: name },
   })
 
-  if (authError) {
-    const msg = (authError.message.includes('already registered') || authError.message.includes('already been registered'))
-      ? 'Este e-mail já está cadastrado.'
-      : authError.message
-    return NextResponse.json({ error: msg }, { status: 400 })
+  if (createError) {
+    const msg = createError.message.toLowerCase()
+    if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
+      return NextResponse.json({ error: 'Este e-mail já está cadastrado.' }, { status: 400 })
+    }
+    return NextResponse.json({ error: createError.message }, { status: 400 })
   }
 
-  // signUp returns user=null when email already exists (Supabase prevents enumeration)
-  if (!authData.user) {
-    return NextResponse.json({ error: 'Este e-mail já está cadastrado.' }, { status: 400 })
-  }
+  const userId = created.user.id
 
-  const userId = authData.user.id
-
-  // Create organization
   const { data: org, error: orgError } = await admin
     .from('organizations')
     .insert({ name: company || `${name} Transportes`, owner_id: userId })
@@ -60,7 +50,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar organização' }, { status: 500 })
   }
 
-  // Create gestor profile
   const { error: profileError } = await admin
     .from('user_profiles')
     .insert({ id: userId, organization_id: org.id, role: 'gestor', full_name: name })
@@ -70,5 +59,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar perfil' }, { status: 500 })
   }
 
-  return NextResponse.json({ id: userId })
+  return NextResponse.json({ id: userId, email })
 }

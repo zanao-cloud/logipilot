@@ -1,0 +1,25 @@
+RELATÓRIO OPERACIONAL — MAIO 2026
+Período: 25/05/2026 a 28/05/2026
+Frota: 3 motoristas, 3 veículos
+
+INDICADORES GERAIS
+- Total de entregas: 179
+- Entregas no prazo: 156 (87,2%)
+- KM percorridos: 2.145
+- Combustível consumido: 295 litros
+- Custo médio por entrega: R$ 12,40
+
+DESTAQUES
+- Maria Souza (DEF2G45): 98,4% de pontualidade, 63 entregas, 715 km
+- João Silva (ABC1D23): 90,7% de pontualidade, 75 entregas, 860 km
+- Pedro Lima (HIJ3K67): 63,4% de pontualidade, 41 entregas, 570 km
+
+OCORRÊNCIAS
+- 28/05: 2 atrasos por trânsito intenso na zona sul
+- 27/05: 1 entrega devolvida (endereço incorreto)
+- 26/05: 1 quebra de veículo (HIJ3K67) — 2 horas paradas
+
+OBSERVAÇÕES
+Pedro Lima apresenta queda significativa de performance comparada ao mês
+anterior (era de 82% para 63%). Avaliar fatores: rota, carga, condições
+do veículo. Possível necessidade de treinamento ou redistribuição.

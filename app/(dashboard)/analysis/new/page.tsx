@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, AlertCircle, Info, BarChart2, FileSpreadsheet, Camera, FileText } from 'lucide-react'
+import { Upload, X, AlertCircle, Info, BarChart2, FileSpreadsheet, Camera, FileText, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -206,11 +207,26 @@ export default function NewAnalysisPage() {
 
         {/* Info box */}
         <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
-          <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+          <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <p className="text-sm text-blue-700">
             A análise extrai indicadores, calcula totais e gera dashboard automaticamente a partir dos seus dados.
             Tempo estimado: alguns segundos dependendo do volume.
           </p>
+        </div>
+
+        {/* AI limits + LGPD card */}
+        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <Shield className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="text-sm text-slate-600 space-y-1.5 leading-relaxed">
+            <p>
+              <strong className="text-slate-700">A IA usa apenas os dados que você envia.</strong> Ela separa fatos
+              observados, hipóteses, recomendações e limitações — e pode apresentar imprecisões. Valide antes de decidir.
+            </p>
+            <p className="text-xs text-slate-500">
+              Arquivos brutos são descartados após o processamento; só o resultado estruturado fica salvo. Mais detalhes na{' '}
+              <Link href="/privacidade" target="_blank" className="text-cyan-600 hover:underline">Política de Privacidade</Link>.
+            </p>
+          </div>
         </div>
 
         {error && (
