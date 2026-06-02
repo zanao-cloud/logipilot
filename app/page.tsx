@@ -6,7 +6,7 @@ import {
   ArrowRight, CheckCircle, Shield, ShieldAlert, ScanSearch,
   ScrollText, LayoutDashboard, BotMessageSquare, CloudUpload,
   ClipboardList, TrendingUp, Target, Star, Activity, AlertTriangle,
-  Layers, Sparkles, FileSpreadsheet, Table2, FileText, Presentation,
+  Layers, FileSpreadsheet, Table2, FileText, Presentation,
   Image, ScanLine, Type, BarChart2, MessageCircle, Mail,
 } from 'lucide-react'
 
@@ -163,25 +163,17 @@ export default function LandingPage() {
 
         {/* ── Headline FIRST ── */}
         <div className="relative z-10 max-w-4xl mx-auto text-center mb-20">
-          <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full text-xs font-semibold text-cyan-400" style={{
-            background: 'rgba(6,182,212,0.08)',
-            border: '1px solid rgba(6,182,212,0.2)',
-          }}>
-            <Sparkles className="w-3 h-3" />
-            IA Multimodal para Análise Operacional
-          </div>
-
           <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6 tracking-tight">
-            Diagnóstico operacional completo,<br className="hidden sm:block" />
+            Você não está enviando arquivos.<br className="hidden sm:block" />
             <span style={{
               backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa, #818cf8)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>
-              gerado por IA
+              {' '}Está ativando um analista
             </span>{' '}
-            <span className="text-white">em minutos.</span>
+            <span className="text-white">operacional com IA.</span>
           </h1>
 
           <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
