@@ -1,16 +1,13 @@
-import Groq from 'groq-sdk'
+import { GoogleGenAI, type Part } from '@google/genai'
 import type { AnalysisResult } from '@/types'
 
-function getGroq() {
-  const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) throw new Error('GROQ_API_KEY não configurada.')
-  return new Groq({ apiKey })
+function getGemini() {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) throw new Error('GEMINI_API_KEY não configurada.')
+  return new GoogleGenAI({ apiKey })
 }
 
-// Multimodal model — accepts both text and images
-const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
-// Text-only fallback for when no images are present (faster, cheaper)
-const TEXT_MODEL = 'llama-3.1-8b-instant'
+const MODEL = 'gemini-2.5-flash'
 
 const SYSTEM_PROMPT = `Você é um analista operacional especializado em diagnóstico de dados empresariais.
 
@@ -80,12 +77,8 @@ interface FileInput {
   imageMediaType?: string
 }
 
-type GroqContentPart =
-  | { type: 'text'; text: string }
-  | { type: 'image_url'; image_url: { url: string } }
-
 export async function analyzeData(files: FileInput[], userContext?: string): Promise<AnalysisResult> {
-  const groq = getGroq()
+  const ai = getGemini()
   const imageFiles = files.filter(f => f.isImage && f.imageBase64)
   const textFiles  = files.filter(f => !f.isImage)
   const hasImages  = imageFiles.length > 0
@@ -109,42 +102,32 @@ export async function analyzeData(files: FileInput[], userContext?: string): Pro
 
   textParts.push('\nAnalise tudo (imagens + dados acima) e retorne SOMENTE o JSON pedido no schema.')
 
-  if (hasImages) {
-    // Multimodal request — text + image parts
-    const content: GroqContentPart[] = [{ type: 'text', text: textParts.join('\n') }]
-    for (const img of imageFiles) {
-      content.push({
-        type: 'image_url',
-        image_url: { url: `data:${img.imageMediaType || 'image/jpeg'};base64,${img.imageBase64}` },
-      })
-    }
-
-    const completion = await groq.chat.completions.create({
-      model: VISION_MODEL,
-      messages: [{ role: 'user', content: content as never }],
-      max_tokens: 8192,
-      temperature: 0.1,
+  const parts: Part[] = [{ text: textParts.join('\n') }]
+  for (const img of imageFiles) {
+    parts.push({
+      inlineData: {
+        mimeType: img.imageMediaType || 'image/jpeg',
+        data: img.imageBase64!,
+      },
     })
-
-    return parseAIResult(completion.choices[0]?.message?.content ?? '')
   }
 
-  // Text-only path — keep the lighter/faster model and json_object enforcement
-  const completion = await groq.chat.completions.create({
-    model: TEXT_MODEL,
-    messages: [{ role: 'user', content: textParts.join('\n') }],
-    max_tokens: 8192,
-    temperature: 0.1,
-    response_format: { type: 'json_object' },
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: [{ role: 'user', parts }],
+    config: {
+      temperature: 0.1,
+      maxOutputTokens: 8192,
+      responseMimeType: 'application/json',
+    },
   })
 
-  return parseAIResult(completion.choices[0]?.message?.content ?? '')
+  return parseAIResult(response.text ?? '')
 }
 
 function parseAIResult(text: string): AnalysisResult {
   if (!text) throw new Error('IA não retornou resposta. Tente novamente.')
 
-  // Strip code fences in case the vision model wraps the JSON
   const cleaned = text
     .replace(/```json\s*/gi, '')
     .replace(/```\s*$/g, '')
@@ -164,7 +147,7 @@ export async function chatWithData(
   messages: { role: 'user' | 'assistant'; content: string }[],
   userMessage: string
 ): Promise<string> {
-  const groq = getGroq()
+  const ai = getGemini()
 
   const systemContext = `Você é um assistente de análise operacional. Responda perguntas sobre esta análise de dados.
 
@@ -177,16 +160,23 @@ REGRAS:
 - Se não houver dados suficientes para responder, diga claramente
 - Separe fatos de hipóteses quando relevante`
 
-  const completion = await groq.chat.completions.create({
-    model: TEXT_MODEL,
-    messages: [
-      { role: 'system', content: systemContext },
-      ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-      { role: 'user', content: userMessage },
+  const history = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }))
+
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: [
+      ...history,
+      { role: 'user', parts: [{ text: userMessage }] },
     ],
-    max_tokens: 2048,
-    temperature: 0.2,
+    config: {
+      systemInstruction: systemContext,
+      temperature: 0.2,
+      maxOutputTokens: 2048,
+    },
   })
 
-  return completion.choices[0]?.message?.content ?? 'Não consegui processar sua pergunta.'
+  return response.text ?? 'Não consegui processar sua pergunta.'
 }

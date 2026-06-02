@@ -691,7 +691,7 @@ function createLocalAnalysis(files: ParsedAIFile[], userContext?: string, aiUnav
               ? `Confirme que as colunas ${uniqueCols.slice(0, 4).join(', ')} estão preenchidas em todos os registros.`
               : 'Organize os dados com cabeçalhos nomeados para facilitar análises futuras.',
         aiUnavailable
-          ? 'Verifique a chave GROQ_API_KEY nas variáveis de ambiente se o erro persistir.'
+          ? 'Verifique a chave GEMINI_API_KEY nas variáveis de ambiente se o erro persistir.'
           : truncated
             ? 'Parte do conteúdo foi truncada. Para análise completa, envie a planilha com menos abas ou colunas.'
             : totalRows > 100
@@ -806,7 +806,7 @@ function buildActionPlan(
       {
         priority: 1,
         title: 'Verificar conexão com a API',
-        description: 'Confirmar que GROQ_API_KEY está correta e que a rede consegue alcançar api.groq.com. A leitura dos dados funcionou — só a etapa de IA falhou.',
+        description: 'Confirmar que GEMINI_API_KEY está correta e que a rede consegue alcançar generativelanguage.googleapis.com. A leitura dos dados funcionou — só a etapa de IA falhou.',
         deadline: 'Hoje',
         expected_result: 'Análise completa gerada na próxima tentativa.',
         effort: 'low' as const,
