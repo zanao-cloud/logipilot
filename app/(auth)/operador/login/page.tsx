@@ -40,7 +40,7 @@ export default function OperadorLoginPage() {
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
         <div className="px-8 py-8" style={{ background: 'linear-gradient(135deg, #030b1a, #0f2060)' }}>
           <div className="flex items-center gap-2 mb-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-1.5">
+            <div className="bg-white rounded-xl px-3 py-1.5 shadow-sm">
             <img src="/logo.png" alt="Logipilot AI" className="h-6 w-auto" />
           </div>
           </div>

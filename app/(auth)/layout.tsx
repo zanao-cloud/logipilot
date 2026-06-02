@@ -7,7 +7,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     }}>
       <div className="p-6">
         <Link href="/" className="w-fit block">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
+          <div className="bg-white rounded-xl px-4 py-2 shadow-sm">
             <img src="/logo.png" alt="Logipilot AI" className="h-7 w-auto" />
           </div>
         </Link>

@@ -113,7 +113,7 @@ export default function LandingPage() {
         borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
       }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-1.5">
+          <div className="bg-white rounded-xl px-3 py-1.5 shadow-sm">
             <img src="/logo.png" alt="Logipilot AI" className="h-7 w-auto" />
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400">
@@ -797,7 +797,7 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className="py-8 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="bg-white/10 rounded-lg px-3 py-1.5">
+          <div className="bg-white rounded-lg px-3 py-1.5">
             <img src="/logo.png" alt="Logipilot AI" className="h-6 w-auto" />
           </div>
           <p className="text-xs text-slate-600">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>

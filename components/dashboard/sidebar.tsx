@@ -85,7 +85,7 @@ export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks
       {/* Brand */}
       <div className="px-5 pt-6 pb-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-1.5">
+          <div className="bg-white rounded-xl px-3 py-1.5 shadow-sm">
             <img src="/logo.png" alt="Logipilot AI" className="h-6 w-auto" />
           </div>
         </Link>
