@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import {
-  Zap, ArrowRight, CheckCircle, Shield, Brain, BarChart3,
-  FileText, Target, MessageSquare, Upload, TrendingUp,
-  Star, Activity, AlertTriangle, Layers, Sparkles,
+  Zap, ArrowRight, CheckCircle, Shield, ShieldAlert, ScanSearch,
+  ScrollText, LayoutDashboard, BotMessageSquare, CloudUpload,
+  ClipboardList, TrendingUp, Target, Star, Activity, AlertTriangle,
+  Layers, Sparkles, FileSpreadsheet, Table2, FileText, Presentation,
+  Image, ScanLine, Type, BarChart2,
 } from 'lucide-react'
 
 /* ─── Sub-components ─── */
@@ -398,21 +400,21 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {[
-              { icon: '📊', label: 'Excel / XLSX', glow: 'rgba(52,211,153,0.08)' },
-              { icon: '📋', label: 'CSV',           glow: 'rgba(52,211,153,0.08)' },
-              { icon: '📄', label: 'PDF',           glow: 'rgba(239,68,68,0.08)'  },
-              { icon: '📑', label: 'PowerPoint',    glow: 'rgba(249,115,22,0.08)' },
-              { icon: '🖼️', label: 'Imagens',       glow: 'rgba(139,92,246,0.08)' },
-              { icon: '📸', label: 'Prints / Fotos',glow: 'rgba(139,92,246,0.08)' },
-              { icon: '📝', label: 'Texto',         glow: 'rgba(148,163,184,0.06)'},
-              { icon: '📈', label: 'Power BI',      glow: 'rgba(234,179,8,0.08)'  },
+              { Icon: FileSpreadsheet, label: 'Excel / XLSX',  color: '#34d399', glow: 'rgba(52,211,153,0.08)'  },
+              { Icon: Table2,          label: 'CSV',            color: '#2dd4bf', glow: 'rgba(45,212,191,0.08)'  },
+              { Icon: FileText,        label: 'PDF',            color: '#f87171', glow: 'rgba(239,68,68,0.08)'   },
+              { Icon: Presentation,    label: 'PowerPoint',     color: '#fb923c', glow: 'rgba(249,115,22,0.08)'  },
+              { Icon: Image,           label: 'Imagens',        color: '#a78bfa', glow: 'rgba(139,92,246,0.08)'  },
+              { Icon: ScanLine,        label: 'Prints / Fotos', color: '#c084fc', glow: 'rgba(192,132,252,0.08)' },
+              { Icon: Type,            label: 'Texto',          color: '#94a3b8', glow: 'rgba(148,163,184,0.06)' },
+              { Icon: BarChart2,       label: 'Power BI',       color: '#fbbf24', glow: 'rgba(234,179,8,0.08)'   },
             ].map(f => (
               <div key={f.label} className="lp-hover flex items-center gap-2.5 text-sm font-medium text-slate-300 px-4 py-3 rounded-xl cursor-default" style={{
                 background: 'rgba(255,255,255,0.025)',
                 border: '1px solid rgba(255,255,255,0.07)',
                 boxShadow: `0 0 24px ${f.glow}`,
               }}>
-                <span className="text-lg">{f.icon}</span>
+                <f.Icon className="w-4 h-4 flex-shrink-0" style={{ color: f.color }} />
                 {f.label}
               </div>
             ))}
@@ -445,12 +447,12 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { icon: FileText,     accent: '#3b82f6',  title: 'Resumo Executivo',    desc: 'Visão clara com highlights principais, indicadores encontrados e período analisado.' },
-              { icon: Brain,        accent: '#8b5cf6',  title: 'Diagnóstico com IA',  desc: 'Score de saúde operacional, fatos observados, hipóteses e recomendações priorizadas.' },
-              { icon: BarChart3,    accent: '#10b981',  title: 'Dashboard Automático',desc: 'Quando há dados estruturados, gera gráficos interativos automaticamente.' },
-              { icon: Shield,       accent: '#ef4444',  title: 'Riscos e Gargalos',   desc: 'Identifica pontos críticos com severidade, evidências e impacto estimado.' },
-              { icon: Target,       accent: '#f59e0b',  title: 'Plano de Ação',       desc: 'Ações priorizadas com prazo, esforço e resultado esperado — prontas para executar.' },
-              { icon: MessageSquare,accent: '#06b6d4',  title: 'Chat com os Dados',   desc: 'Faça perguntas sobre sua análise. A IA responde com base nos arquivos enviados.' },
+              { icon: ScrollText,       accent: '#3b82f6', title: 'Resumo Executivo',    desc: 'Visão clara com highlights principais, indicadores encontrados e período analisado.' },
+              { icon: ScanSearch,       accent: '#8b5cf6', title: 'Diagnóstico com IA',  desc: 'Score de saúde operacional, fatos observados, hipóteses e recomendações priorizadas.' },
+              { icon: LayoutDashboard,  accent: '#10b981', title: 'Dashboard Automático',desc: 'Quando há dados estruturados, gera gráficos interativos automaticamente.' },
+              { icon: ShieldAlert,      accent: '#ef4444', title: 'Riscos e Gargalos',   desc: 'Identifica pontos críticos com severidade, evidências e impacto estimado.' },
+              { icon: ClipboardList,    accent: '#f59e0b', title: 'Plano de Ação',       desc: 'Ações priorizadas com prazo, esforço e resultado esperado — prontas para executar.' },
+              { icon: BotMessageSquare, accent: '#06b6d4', title: 'Chat com os Dados',   desc: 'Faça perguntas sobre sua análise. A IA responde com base nos arquivos enviados.' },
             ].map(f => (
               <div key={f.title} className="lp-hover group relative rounded-2xl p-6 overflow-hidden" style={{
                 background: `linear-gradient(135deg, ${f.accent}14 0%, rgba(6,11,22,0.9) 60%)`,
@@ -485,9 +487,9 @@ export default function LandingPage() {
               boxShadow: '0 0 8px rgba(6,182,212,0.3)',
             }} />
             {[
-              { step: '01', icon: Upload,      title: 'Envie seus dados',  desc: 'Upload de Excel, CSV, PDF, imagens, prints ou texto. Qualquer formato, qualquer combinação.' },
-              { step: '02', icon: Brain,        title: 'IA analisa tudo',   desc: 'O modelo multimodal processa todos os arquivos e gera análise estruturada em minutos.' },
-              { step: '03', icon: TrendingUp,   title: 'Decida e execute',  desc: 'Acesse o dashboard, diagnóstico, plano de ação e exporte o relatório em PDF.' },
+              { step: '01', icon: CloudUpload,   title: 'Envie seus dados',  desc: 'Upload de Excel, CSV, PDF, imagens, prints ou texto. Qualquer formato, qualquer combinação.' },
+              { step: '02', icon: ScanSearch,   title: 'IA analisa tudo',   desc: 'O modelo multimodal processa todos os arquivos e gera análise estruturada em minutos.' },
+              { step: '03', icon: ClipboardList,title: 'Decida e execute',  desc: 'Acesse o dashboard, diagnóstico, plano de ação e exporte o relatório em PDF.' },
             ].map(s => (
               <div key={s.step} className="text-center relative z-10">
                 <div className="relative w-14 h-14 mx-auto mb-6">
