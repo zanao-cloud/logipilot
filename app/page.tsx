@@ -741,76 +741,53 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Contact strip ── */}
-      <section className="py-16 px-6" style={{ background: 'linear-gradient(135deg, #060d1a, #0a1628)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#22d3ee' }}>Atendimento</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-white">Fale com a gente</h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-4">
+      {/* ── Footer ── */}
+      <footer className="py-10 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href="https://wa.me/5511939369341" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-4 rounded-2xl px-6 py-5 transition-all group"
+              aria-label="WhatsApp (11) 93936-9341"
+              className="inline-flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-slate-300 transition-all"
               style={{ background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.2)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.14)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.08)' }}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.25)' }}>
-                <MessageCircle className="w-6 h-6" style={{ color: '#25d366' }} />
-              </div>
-              <div>
-                <p className="font-semibold text-white text-sm">WhatsApp</p>
-                <p className="text-xs text-slate-400 mt-0.5">(11) 93936-9341</p>
-              </div>
+              <MessageCircle className="w-4 h-4" style={{ color: '#25d366' }} />
+              <span className="font-medium">(11) 93936-9341</span>
             </a>
 
             <a href="https://instagram.com/logipilotai" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-4 rounded-2xl px-6 py-5 transition-all group"
+              aria-label="Instagram @logipilotai"
+              className="inline-flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-slate-300 transition-all"
               style={{ background: 'rgba(225,48,108,0.08)', border: '1px solid rgba(225,48,108,0.2)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(225,48,108,0.14)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(225,48,108,0.08)' }}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(225,48,108,0.15)', border: '1px solid rgba(225,48,108,0.25)' }}>
-                <InstagramIcon className="w-6 h-6" style={{ color: '#e1306c' }} />
-              </div>
-              <div>
-                <p className="font-semibold text-white text-sm">Instagram</p>
-                <p className="text-xs text-slate-400 mt-0.5">@logipilotai</p>
-              </div>
+              <InstagramIcon className="w-4 h-4" style={{ color: '#e1306c' }} />
+              <span className="font-medium">@logipilotai</span>
             </a>
 
             <a href="mailto:logipilot@gmail.com"
-              className="flex items-center gap-4 rounded-2xl px-6 py-5 transition-all group"
+              aria-label="E-mail logipilot@gmail.com"
+              className="inline-flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-slate-300 transition-all"
               style={{ background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,165,233,0.14)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(14,165,233,0.08)' }}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.25)' }}>
-                <Mail className="w-6 h-6 text-sky-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-white text-sm">E-mail</p>
-                <p className="text-xs text-slate-400 mt-0.5">logipilot@gmail.com</p>
-              </div>
+              <Mail className="w-4 h-4 text-sky-400" />
+              <span className="font-medium">logipilot@gmail.com</span>
             </a>
           </div>
-        </div>
-      </section>
 
-      {/* ── Footer ── */}
-      <footer className="py-8 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <img
-            src="/logo.png"
-            alt="Logipilot AI"
-            className="h-9 w-auto"
-            style={{ filter: 'brightness(0) invert(1)' }}
-          />
-          <p className="text-xs text-slate-600">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <Link href="/privacidade" className="hover:text-slate-300 transition-colors">Privacidade</Link>
-            <Link href="/termos"      className="hover:text-slate-300 transition-colors">Termos</Link>
-            <a href="https://wa.me/5511939369341" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors">Suporte</a>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <img
+              src="/logo.png"
+              alt="Logipilot AI"
+              className="h-9 w-auto"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
+            <p className="text-xs text-slate-600 text-center">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              <Link href="/privacidade" className="hover:text-slate-300 transition-colors">Privacidade</Link>
+              <Link href="/termos"      className="hover:text-slate-300 transition-colors">Termos</Link>
+            </div>
           </div>
         </div>
       </footer>
