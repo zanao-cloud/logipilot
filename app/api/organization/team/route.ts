@@ -24,7 +24,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data: team } = await supabase
+  const { data: team } = await adminRead
     .from('user_profiles')
     .select('id, full_name, role, phone, vehicle_plate, created_at')
     .eq('organization_id', myProfile.organization_id)
