@@ -3,11 +3,12 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, AlertCircle, Info, BarChart2 } from 'lucide-react'
+import { Upload, X, AlertCircle, Info, BarChart2, FileSpreadsheet, Camera, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { formatFileSize, getFileIcon } from '@/lib/utils'
+import { formatFileSize } from '@/lib/utils'
+import { FileIcon } from '@/components/ui/file-icon'
 import { AnalysisProcessingLoader } from '@/components/ui/loading'
 
 const ACCEPTED = {
@@ -26,7 +27,7 @@ export default function NewAnalysisPage() {
   const [files, setFiles] = useState<File[]>([])
   const [title, setTitle] = useState('')
   const [context, setContext] = useState('')
-  const analysisMode = 'local'
+  const analysisMode = 'ai'
   const [processing, setProcessing] = useState(false)
   const [stage, setStage] = useState<ProcessingStage>('upload')
   const [error, setError] = useState('')
@@ -174,7 +175,7 @@ export default function NewAnalysisPage() {
 
             {/* Format tags */}
             <div className="flex flex-wrap gap-2">
-              {['📊 Excel/XLSX', '📋 CSV', '📄 PDF', '📑 PPTX', '📝 DOCX/TXT', '🖼️ Imagens', '📸 Prints', '📈 Power BI exportado'].map(f => (
+              {['Excel/XLSX', 'CSV', 'PDF', 'PPTX', 'DOCX/TXT', 'Imagens', 'Prints', 'Power BI exportado'].map(f => (
                 <span key={f} className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{f}</span>
               ))}
             </div>
@@ -184,7 +185,7 @@ export default function NewAnalysisPage() {
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {files.map((file) => (
                   <div key={file.name} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2.5">
-                    <span className="text-lg flex-shrink-0">{getFileIcon(file.type, file.name)}</span>
+                    <FileIcon type={file.type} name={file.name} className="w-5 h-5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
                       <p className="text-xs text-slate-400">{formatFileSize(file.size)}</p>
@@ -243,12 +244,15 @@ export default function NewAnalysisPage() {
       {/* Tip cards */}
       <div className="grid sm:grid-cols-3 gap-4 mt-8">
         {[
-          { icon: '📊', title: 'Dados estruturados', desc: 'Excel e CSV geram dashboards automáticos com gráficos e indicadores.' },
-          { icon: '📸', title: 'Prints e imagens', desc: 'Screenshots de sistemas, fotos de quadros ou relatórios visuais são aceitos.' },
-          { icon: '📄', title: 'Relatórios Power BI', desc: 'Exporte em PDF, imagem ou Excel do Power BI e envie aqui.' },
+          { Icon: FileSpreadsheet, color: '#10b981', title: 'Dados estruturados', desc: 'Excel e CSV geram dashboards automáticos com gráficos e indicadores.' },
+          { Icon: Camera,          color: '#38bdf8', title: 'Prints e imagens', desc: 'Screenshots de sistemas, fotos de quadros ou relatórios visuais são aceitos.' },
+          { Icon: FileText,        color: '#ef4444', title: 'Relatórios Power BI', desc: 'Exporte em PDF, imagem ou Excel do Power BI e envie aqui.' },
         ].map((tip) => (
           <div key={tip.title} className="bg-white border border-slate-100 rounded-xl p-4">
-            <div className="text-2xl mb-2">{tip.icon}</div>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
+              style={{ background: `${tip.color}14`, border: `1px solid ${tip.color}30` }}>
+              <tip.Icon className="w-5 h-5" style={{ color: tip.color }} />
+            </div>
             <p className="text-sm font-medium text-slate-700 mb-1">{tip.title}</p>
             <p className="text-xs text-slate-500">{tip.desc}</p>
           </div>

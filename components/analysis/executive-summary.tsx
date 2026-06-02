@@ -4,6 +4,7 @@ import Link from 'next/link'
 import {
   CheckCircle, TrendingUp, TrendingDown, Minus,
   BarChart3, AlertTriangle, Target, Zap, FileText, Calendar,
+  Check, X, AlertCircle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -179,7 +180,7 @@ export function ExecutiveSummaryView({ analysis }: { analysis: Analysis }) {
           <ul className="space-y-1">
             {result.limitations.map((lim, i) => (
               <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
-                <span className="mt-0.5 flex-shrink-0">⚠️</span>
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 {lim}
               </li>
             ))}
@@ -198,8 +199,14 @@ function IndicatorCard({ indicator }: { indicator: Indicator }) {
     <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
       <div className="flex items-start justify-between gap-2 mb-2">
         <p className="text-xs text-slate-500 font-medium leading-tight">{indicator.name}</p>
-        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${statusColors}`}>
-          {indicator.status === 'good' ? '✓' : indicator.status === 'warning' ? '!' : indicator.status === 'critical' ? '✗' : '—'}
+        <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${statusColors}`}>
+          {indicator.status === 'good'
+            ? <Check className="w-3 h-3" />
+            : indicator.status === 'warning'
+              ? <AlertCircle className="w-3 h-3" />
+              : indicator.status === 'critical'
+                ? <X className="w-3 h-3" />
+                : <Minus className="w-3 h-3" />}
         </span>
       </div>
       <div className="flex items-end gap-2">

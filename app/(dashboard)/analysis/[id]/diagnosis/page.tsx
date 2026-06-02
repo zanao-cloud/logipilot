@@ -83,7 +83,7 @@ export default async function DiagnosisPage({ params }: { params: Promise<{ id: 
             <ul className="space-y-2.5">
               {diagnosis.hypotheses.map((hyp, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700">
-                  <span className="text-amber-500 flex-shrink-0 mt-0.5">💡</span>
+                  <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                   {hyp}
                 </li>
               ))}
@@ -125,8 +125,9 @@ export default async function DiagnosisPage({ params }: { params: Promise<{ id: 
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {diagnosis.priority_areas.map((area, i) => (
-                <span key={i} className="bg-red-50 text-red-700 text-sm px-3 py-1.5 rounded-full border border-red-100">
-                  🎯 {area}
+                <span key={i} className="bg-red-50 text-red-700 text-sm px-3 py-1.5 rounded-full border border-red-100 inline-flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5" />
+                  {area}
                 </span>
               ))}
             </div>

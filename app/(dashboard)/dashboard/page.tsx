@@ -5,11 +5,13 @@ import Link from 'next/link'
 import {
   PlusCircle, FileText, Clock, CheckCircle, AlertCircle,
   TrendingUp, BarChart3, Brain, Users, Truck, Shield, ArrowRight,
-  KeyRound, UserPlus,
+  KeyRound, UserPlus, FileSpreadsheet, Image as ImageIcon,
+  Camera, LineChart, Type,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatDate, getFileIcon } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
+import { FileIcon } from '@/components/ui/file-icon'
 import { useProfile } from '@/lib/hooks/use-profile'
 import type { Analysis, Member } from '@/types'
 
@@ -189,13 +191,17 @@ export default function DashboardPage() {
             </div>
             <div className="grid grid-cols-3 gap-3 flex-shrink-0">
               {[
-                ['📊', 'Excel / CSV'], ['📄', 'PDFs'], ['🖼️', 'Imagens'],
-                ['📸', 'Prints'], ['📈', 'Power BI'], ['📝', 'Textos'],
-              ].map(([icon, label]) => (
-                <div key={label} className="rounded-xl p-3 text-center"
+                { Icon: FileSpreadsheet, color: '#10b981', label: 'Excel / CSV' },
+                { Icon: FileText,        color: '#ef4444', label: 'PDFs' },
+                { Icon: ImageIcon,       color: '#38bdf8', label: 'Imagens' },
+                { Icon: Camera,          color: '#a78bfa', label: 'Prints' },
+                { Icon: LineChart,       color: '#f59e0b', label: 'Power BI' },
+                { Icon: Type,            color: '#94a3b8', label: 'Textos' },
+              ].map(item => (
+                <div key={item.label} className="rounded-xl p-3 text-center"
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="text-2xl mb-1">{icon}</div>
-                  <p className="text-xs text-slate-400">{label}</p>
+                  <item.Icon className="w-5 h-5 mx-auto mb-1.5" style={{ color: item.color }} />
+                  <p className="text-xs text-slate-400">{item.label}</p>
                 </div>
               ))}
             </div>
@@ -253,9 +259,9 @@ function AnalysisCard({ analysis }: { analysis: Analysis }) {
       onMouseEnter={e => { if (isClickable) e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
       onMouseLeave={e => { if (isClickable) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
     >
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        {files[0] ? getFileIcon(files[0].type, files[0].name) : '📁'}
+        <FileIcon type={files[0]?.type || ''} name={files[0]?.name || ''} className="w-5 h-5" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-white truncate">{analysis.title}</p>

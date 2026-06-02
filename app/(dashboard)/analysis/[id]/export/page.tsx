@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download, FileText, Loader2, CheckCircle } from 'lucide-react'
+import { Download, FileText, Loader2, CheckCircle, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
@@ -238,15 +238,16 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
               <p className="text-sm text-slate-500 mt-1">{formatDate(analysis.created_at)}</p>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                 {[
-                  ['Resumo executivo', '✓'],
-                  [`${result.indicators.length} indicadores`, '✓'],
-                  [`Score: ${result.diagnosis.health_score}/100`, '✓'],
-                  [`${result.action_plan.length} ações`, '✓'],
-                  [`${result.bottlenecks.length} gargalos`, '✓'],
-                  [`${result.inconsistencies.length} inconsistências`, '✓'],
-                ].map(([label, check]) => (
+                  'Resumo executivo',
+                  `${result.indicators.length} indicadores`,
+                  `Score: ${result.diagnosis.health_score}/100`,
+                  `${result.action_plan.length} ações`,
+                  `${result.bottlenecks.length} gargalos`,
+                  `${result.inconsistencies.length} inconsistências`,
+                ].map(label => (
                   <div key={label} className="flex items-center gap-1.5 text-slate-600">
-                    <span className="text-emerald-500">{check}</span> {label}
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    {label}
                   </div>
                 ))}
               </div>

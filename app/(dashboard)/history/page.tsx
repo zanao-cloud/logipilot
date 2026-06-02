@@ -6,7 +6,8 @@ import { History, TrendingUp, Search, FileText } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { formatDate, getFileIcon } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
+import { FileIcon } from '@/components/ui/file-icon'
 import type { Analysis } from '@/types'
 
 export default function HistoryPage() {
@@ -89,8 +90,8 @@ export default function HistoryPage() {
             const card = (
               <Card hover={isClickable} key={analysis.id}>
                 <CardContent className="flex items-center gap-4 py-4">
-                  <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
-                    {files[0] ? getFileIcon(files[0].type, files[0].name) : '📁'}
+                  <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileIcon type={files[0]?.type || ''} name={files[0]?.name || ''} className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-800 truncate">{analysis.title}</p>
@@ -101,7 +102,10 @@ export default function HistoryPage() {
                         {files.length} arquivo{files.length !== 1 ? 's' : ''}
                       </span>
                       {files.slice(0, 3).map(f => (
-                        <span key={f.name} className="text-xs text-slate-400">{getFileIcon(f.type, f.name)} {f.name}</span>
+                        <span key={f.name} className="text-xs text-slate-400 inline-flex items-center gap-1">
+                          <FileIcon type={f.type} name={f.name} className="w-3 h-3" />
+                          {f.name}
+                        </span>
                       ))}
                     </div>
                   </div>

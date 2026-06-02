@@ -1,3 +1,4 @@
+import { Brain, Check } from 'lucide-react'
 import { cn as cnUtil } from '@/lib/utils'
 const cn = cnUtil
 
@@ -39,7 +40,7 @@ export function AnalysisProcessingLoader({ stage }: { stage: string }) {
         <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
         <div className="absolute inset-0 rounded-full border-4 border-t-[#1E3A5F] border-r-emerald-500 animate-spin" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl">🤖</span>
+          <Brain className="w-7 h-7 text-[#1E3A5F]" />
         </div>
       </div>
 
@@ -57,7 +58,7 @@ export function AnalysisProcessingLoader({ stage }: { stage: string }) {
               i === currentIdx ? 'bg-[#1E3A5F] text-white animate-pulse' :
               'bg-slate-100 text-slate-400'
             )}>
-              {i < currentIdx ? '✓' : i + 1}
+              {i < currentIdx ? <Check className="w-3.5 h-3.5" /> : i + 1}
             </div>
             <span className={cn(
               'text-sm',

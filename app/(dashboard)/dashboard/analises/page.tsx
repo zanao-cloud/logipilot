@@ -6,7 +6,8 @@ import { PlusCircle, Search, TrendingUp, FileText, Truck, BarChart3 } from 'luci
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatDate, getFileIcon } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
+import { FileIcon } from '@/components/ui/file-icon'
 import type { Analysis, Member } from '@/types'
 
 const statusConfig = {
@@ -189,8 +190,8 @@ function AnalysisRow({ analysis }: { analysis: Analysis }) {
 
   const row = (
     <div className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${isClick ? 'hover:bg-slate-50 cursor-pointer' : ''}`}>
-      <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-base flex-shrink-0">
-        {files[0] ? getFileIcon(files[0].type, files[0].name) : '📁'}
+      <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center flex-shrink-0">
+        <FileIcon type={files[0]?.type || ''} name={files[0]?.name || ''} className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-800 truncate">{analysis.title}</p>

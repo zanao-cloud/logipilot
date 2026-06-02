@@ -158,7 +158,7 @@ export default function MotoristaPage() {
               </div>
               <p className="text-xs text-slate-400 mt-2">
                 {data.entregas >= data.meta
-                  ? '✅ Meta atingida!'
+                  ? 'Meta atingida'
                   : `${data.meta - data.entregas} entregas para atingir a meta`}
               </p>
             </div>

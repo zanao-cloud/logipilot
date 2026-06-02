@@ -33,19 +33,43 @@ function getKpis(id: string) {
   }
 }
 
-function getMockDeliveries(id: string) {
+// Generate exactly `count` mock deliveries, with `Math.round(count * pontualidade / 100)`
+// of them being "Entregue" (the rest "Pendente"). Times spread across business hours.
+function getMockDeliveries(id: string, count: number, pontualidadePct: number) {
   const h = id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  const addresses = [
-    'Rua das Flores, 123 — Centro', 'Av. Brasil, 456 — Jd. Norte',
-    'Rua do Comércio, 789 — Vila Nova', 'Av. Paulista, 1001 — Bela Vista',
-    'Rua Sete de Setembro, 42 — Centro',
+  const streets = [
+    'Rua das Flores', 'Av. Brasil', 'Rua do Comércio', 'Av. Paulista',
+    'Rua Sete de Setembro', 'Av. Independência', 'Rua XV de Novembro',
+    'Av. Getúlio Vargas', 'Rua dos Andradas', 'Av. Santos Dumont',
+    'Rua das Acácias', 'Av. das Nações', 'Rua Marechal Deodoro',
+    'Av. Beira Mar', 'Rua Coronel Bordini', 'Av. Goethe',
   ]
-  return [0,1,2,3,4].map(i => ({
-    dest: addresses[(h + i) % addresses.length],
-    hora: `${String(8 + ((h + i * 2) % 10)).padStart(2,'0')}:${String((h * i) % 60).padStart(2,'0')}`,
-    status: (h + i) % 5 !== 3 ? 'Entregue' : 'Pendente',
-    ok: (h + i) % 5 !== 3,
-  }))
+  const neighborhoods = [
+    'Centro', 'Jd. Norte', 'Vila Nova', 'Bela Vista', 'Jardim das Palmeiras',
+    'Vila Olímpia', 'Itaim', 'Pinheiros', 'Moema', 'Tatuapé',
+    'Lapa', 'Higienópolis', 'Vila Madalena', 'Jardins',
+  ]
+
+  const okCount = Math.round((count * pontualidadePct) / 100)
+
+  return Array.from({ length: count }, (_, i) => {
+    const street = streets[(h + i * 3) % streets.length]
+    const number = ((h + i * 17) % 9000) + 100
+    const neighborhood = neighborhoods[(h + i * 5) % neighborhoods.length]
+
+    // Stagger times from 07:00 to ~21:00 evenly across the deliveries
+    const totalMinutes = 7 * 60 + Math.floor((i / Math.max(1, count - 1)) * 14 * 60)
+    const hh = String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')
+    const mm = String(totalMinutes % 60).padStart(2, '0')
+
+    const ok = i < okCount
+    return {
+      dest: `${street}, ${number} — ${neighborhood}`,
+      hora: `${hh}:${mm}`,
+      status: ok ? 'Entregue' : 'Pendente',
+      ok,
+    }
+  })
 }
 
 export default function MotoristaDetailPage() {
@@ -99,7 +123,7 @@ export default function MotoristaDetailPage() {
 
   const allKpis = getKpis(motorista.id)
   const data = allKpis[period]
-  const deliveries = getMockDeliveries(motorista.id)
+  const deliveries = getMockDeliveries(motorista.id, data.entregas, data.pontualidade)
   const stars = Math.round(data.pontualidade / 20)
   const progress = Math.min(100, (data.entregas / data.meta) * 100)
   const efficiency = Math.round((data.entregas / data.meta) * 100)
@@ -227,7 +251,7 @@ export default function MotoristaDetailPage() {
                   />
                 </div>
                 <p className="text-xs text-slate-400">
-                  {data.entregas >= data.meta ? '✅ Meta atingida!' : `Faltam ${data.meta - data.entregas} entregas`}
+                  {data.entregas >= data.meta ? 'Meta atingida' : `Faltam ${data.meta - data.entregas} entregas`}
                 </p>
               </CardContent>
             </Card>
@@ -286,9 +310,16 @@ export default function MotoristaDetailPage() {
 
           {/* Recent deliveries */}
           <Card>
-            <CardHeader><h2 className="font-semibold text-slate-800">Últimas entregas registradas</h2></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-slate-800">Entregas do período</h2>
+                <span className="text-xs text-slate-400">
+                  {deliveries.filter(d => d.ok).length} entregue{deliveries.filter(d => d.ok).length !== 1 ? 's' : ''} · {deliveries.filter(d => !d.ok).length} pendente{deliveries.filter(d => !d.ok).length !== 1 ? 's' : ''} · {deliveries.length} total
+                </span>
+              </div>
+            </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                 {deliveries.map((d, i) => (
                   <div key={i} className="flex items-center gap-3 py-2.5 border-b border-slate-50 last:border-0">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${d.ok ? 'bg-emerald-500' : 'bg-amber-400'}`} />

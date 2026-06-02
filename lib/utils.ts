@@ -23,15 +23,18 @@ export function formatDate(dateStr: string): string {
   })
 }
 
-export function getFileIcon(type: string, name: string): string {
+export type FileKind = 'image' | 'pdf' | 'spreadsheet' | 'csv' | 'slides' | 'text' | 'doc' | 'file'
+
+export function getFileKind(type: string, name: string): FileKind {
   const ext = name.split('.').pop()?.toLowerCase()
-  if (type.startsWith('image/')) return '🖼️'
-  if (ext === 'pdf') return '📄'
-  if (ext === 'xlsx' || ext === 'xls') return '📊'
-  if (ext === 'csv') return '📋'
-  if (ext === 'pptx' || ext === 'ppt') return '📑'
-  if (ext === 'txt') return '📝'
-  return '📁'
+  if (type.startsWith('image/')) return 'image'
+  if (ext === 'pdf') return 'pdf'
+  if (ext === 'xlsx' || ext === 'xls') return 'spreadsheet'
+  if (ext === 'csv') return 'csv'
+  if (ext === 'pptx' || ext === 'ppt') return 'slides'
+  if (ext === 'txt') return 'text'
+  if (ext === 'docx' || ext === 'doc') return 'doc'
+  return 'file'
 }
 
 export function getSeverityColor(severity: 'high' | 'medium' | 'low') {

@@ -6,7 +6,8 @@ import { PlusCircle, BarChart3, CheckCircle, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatDate, getFileIcon } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
+import { FileIcon } from '@/components/ui/file-icon'
 import { useProfile } from '@/lib/hooks/use-profile'
 import type { Analysis } from '@/types'
 
@@ -76,7 +77,9 @@ export default function OperadorPage() {
               const card = (
                 <Card key={a.id} hover={isClickable}>
                   <CardContent className="flex items-center gap-3 py-3">
-                    <span className="text-lg">{files[0] ? getFileIcon(files[0].type, files[0].name) : '📁'}</span>
+                    {files[0]
+                      ? <FileIcon type={files[0].type} name={files[0].name} className="w-5 h-5" />
+                      : <FileIcon type="" name="" className="w-5 h-5" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-800 truncate">{a.title}</p>
                       <p className="text-xs text-slate-400">{formatDate(a.created_at)}</p>
