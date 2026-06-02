@@ -113,9 +113,12 @@ export default function LandingPage() {
         borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
       }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="bg-white rounded-xl px-3 py-1.5 shadow-sm">
-            <img src="/logo.png" alt="Logipilot AI" className="h-7 w-auto" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Logipilot AI"
+            className="h-11 w-auto"
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
           <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400">
             <a href="#features" className="hover:text-white transition-colors">Funcionalidades</a>
             <a href="#how"      className="hover:text-white transition-colors">Como funciona</a>
@@ -797,9 +800,12 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className="py-8 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="bg-white rounded-lg px-3 py-1.5">
-            <img src="/logo.png" alt="Logipilot AI" className="h-6 w-auto" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Logipilot AI"
+            className="h-9 w-auto"
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
           <p className="text-xs text-slate-600">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
           <div className="flex items-center gap-4 text-xs text-slate-500">
             <Link href="/privacidade" className="hover:text-slate-300 transition-colors">Privacidade</Link>

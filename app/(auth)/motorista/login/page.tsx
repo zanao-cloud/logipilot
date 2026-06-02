@@ -38,9 +38,12 @@ export default function MotoristaLoginPage() {
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #030b1a 0%, #0f2060 50%, #030b1a 100%)' }}>
       <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8">
         <div className="flex items-center gap-2 mb-12">
-          <div className="bg-white rounded-xl px-3 py-1.5 shadow-sm">
-            <img src="/logo.png" alt="Logipilot AI" className="h-6 w-auto" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Logipilot AI"
+            className="h-12 w-auto"
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
         </div>
 
         <div className="w-24 h-24 rounded-3xl bg-white/10 flex items-center justify-center mb-6">
