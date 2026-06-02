@@ -17,10 +17,21 @@ export function useProfile() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/profile')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { setProfile(data); setLoading(false) })
-      .catch(() => setLoading(false))
+    let retries = 0
+    function attempt() {
+      fetch('/api/profile')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) { setProfile(data); setLoading(false) }
+          else if (retries < 2) { retries++; setTimeout(attempt, 1500) }
+          else setLoading(false)
+        })
+        .catch(() => {
+          if (retries < 2) { retries++; setTimeout(attempt, 1500) }
+          else setLoading(false)
+        })
+    }
+    attempt()
   }, [])
 
   return { profile, loading }

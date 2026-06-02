@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, PlusCircle, History, LogOut,
-  Zap, Truck, BarChart3, KeyRound,
+  Truck, BarChart3, KeyRound,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -85,12 +85,7 @@ export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks
       {/* Brand */}
       <div className="px-5 pt-6 pb-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-900/40">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-bold text-white tracking-tight">
-            LogiPilot <span className="text-emerald-400">AI</span>
-          </span>
+          <img src="/logo.png" alt="Logipilot AI" className="h-7 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
         </Link>
       </div>
 
@@ -169,11 +164,11 @@ export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks
                     >
                       <item.icon className={cn(
                         'w-4 h-4 flex-shrink-0 transition-colors',
-                        active ? 'text-emerald-400' : 'group-hover:text-slate-300'
+                        active ? 'text-sky-400' : 'group-hover:text-slate-300'
                       )} />
                       <span className="flex-1">{item.label}</span>
                       {active && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-sky-400 flex-shrink-0" />
                       )}
                     </Link>
                   )

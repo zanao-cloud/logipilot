@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import {
-  Zap, ArrowRight, CheckCircle, Shield, ShieldAlert, ScanSearch,
+  ArrowRight, CheckCircle, Shield, ShieldAlert, ScanSearch,
   ScrollText, LayoutDashboard, BotMessageSquare, CloudUpload,
   ClipboardList, TrendingUp, Target, Star, Activity, AlertTriangle,
   Layers, Sparkles, FileSpreadsheet, Table2, FileText, Presentation,
@@ -103,13 +103,8 @@ export default function LandingPage() {
         borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
       }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20" style={{
-              background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
-            }}>
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-white">LogiPilot <span className="text-cyan-400">AI</span></span>
+          <div className="flex items-center">
+            <img src="/logo.png" alt="Logipilot AI" className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400">
             <a href="#features" className="hover:text-white transition-colors">Funcionalidades</a>
@@ -725,13 +720,8 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className="py-8 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded flex items-center justify-center" style={{
-              background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
-            }}>
-              <Zap className="w-3 h-3 text-white" />
-            </div>
-            <span className="text-sm font-bold text-white">LogiPilot AI</span>
+          <div className="flex items-center">
+            <img src="/logo.png" alt="Logipilot AI" className="h-6 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
           </div>
           <p className="text-xs text-slate-700">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
           <div className="flex items-center gap-4 text-xs text-slate-600">

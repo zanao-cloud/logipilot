@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Users, Zap, ArrowLeft } from 'lucide-react'
+import { Users, ArrowLeft } from 'lucide-react'
 
 export default function OperadorLoginPage() {
   const [email, setEmail] = useState('')
@@ -38,18 +38,15 @@ export default function OperadorLoginPage() {
   return (
     <div className="w-full max-w-md">
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="bg-gradient-to-br from-[#1a2e1a] to-[#2d5a2d] px-8 py-8">
+        <div className="px-8 py-8" style={{ background: 'linear-gradient(135deg, #030b1a, #0f2060)' }}>
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-7 h-7 rounded-lg bg-amber-400 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-[#1a2e1a]" />
-            </div>
-            <span className="text-white font-bold text-sm">LogiPilot AI</span>
+            <img src="/logo.png" alt="Logipilot AI" className="h-7 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
           </div>
           <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-4">
             <Users className="w-6 h-6 text-amber-400" />
           </div>
           <h1 className="text-2xl font-bold text-white">Portal do Operador</h1>
-          <p className="text-green-200 text-sm mt-1">Análises e dados operacionais da frota</p>
+          <p className="text-slate-300 text-sm mt-1">Análises e dados operacionais da frota</p>
         </div>
 
         <div className="px-8 py-8">
@@ -85,7 +82,7 @@ export default function OperadorLoginPage() {
 
             <Button
               type="submit"
-              className="w-full bg-[#2d5a2d] hover:bg-[#1a2e1a] text-white border-0"
+              className="w-full"
               size="lg"
               loading={loading}
             >

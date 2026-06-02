@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Building2, Zap, Users, Truck } from 'lucide-react'
+import { Building2, Users, Truck } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -69,15 +69,12 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-md">
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="bg-gradient-to-br from-[#0F1B2D] to-[#1E3A5F] px-8 py-8">
+        <div className="px-8 py-8" style={{ background: 'linear-gradient(135deg, #030b1a, #0f2060)' }}>
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-white font-bold text-sm">LogiPilot AI</span>
+            <img src="/logo.png" alt="Logipilot AI" className="h-7 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
           </div>
           <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-4">
-            <Building2 className="w-6 h-6 text-emerald-400" />
+            <Building2 className="w-6 h-6 text-sky-400" />
           </div>
           <h1 className="text-2xl font-bold text-white">Portal Empresarial</h1>
           <p className="text-slate-300 text-sm mt-1">Gestão, análises e relatórios da sua frota</p>
@@ -115,7 +112,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Empresa nova?{' '}
-            <Link href="/register" className="text-[#1E3A5F] font-medium hover:underline">
+            <Link href="/register" className="text-blue-600 font-medium hover:underline">
               Criar conta grátis
             </Link>
           </p>

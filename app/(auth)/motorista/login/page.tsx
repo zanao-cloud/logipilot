@@ -6,7 +6,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Truck, Zap, Eye, EyeOff } from 'lucide-react'
+import { Truck, Eye, EyeOff } from 'lucide-react'
 
 export default function MotoristaLoginPage() {
   const [email, setEmail] = useState('')
@@ -35,17 +35,14 @@ export default function MotoristaLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0F1B2D] to-[#1E3A5F] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #030b1a 0%, #0f2060 50%, #030b1a 100%)' }}>
       <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8">
         <div className="flex items-center gap-2 mb-12">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-white font-bold">LogiPilot AI</span>
+          <img src="/logo.png" alt="Logipilot AI" className="h-7 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
         </div>
 
         <div className="w-24 h-24 rounded-3xl bg-white/10 flex items-center justify-center mb-6">
-          <Truck className="w-12 h-12 text-emerald-400" />
+          <Truck className="w-12 h-12 text-sky-400" />
         </div>
 
         <h1 className="text-3xl font-bold text-white text-center">App do Motorista</h1>
@@ -66,7 +63,7 @@ export default function MotoristaLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -79,7 +76,7 @@ export default function MotoristaLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
                 type="button"
@@ -100,7 +97,7 @@ export default function MotoristaLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-base transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-base transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

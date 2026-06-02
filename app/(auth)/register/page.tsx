@@ -4,11 +4,9 @@ export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Building2 } from 'lucide-react'
+import { Building2, MailCheck } from 'lucide-react'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -17,8 +15,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
+  const [done, setDone] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -35,19 +32,41 @@ export default function RegisterPage() {
     const data = await res.json()
     if (!res.ok) { setError(data.error || 'Erro ao criar conta.'); setLoading(false); return }
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-    if (signInError) { router.push('/login'); return }
-
-    router.push('/dashboard')
-    router.refresh()
+    setDone(true)
   }
+
+  if (done) return (
+    <div className="w-full max-w-md">
+      <div className="bg-white rounded-2xl shadow-xl p-10 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-5">
+          <MailCheck className="w-7 h-7 text-blue-600" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Verifique seu e-mail</h2>
+        <p className="text-slate-500 text-sm leading-relaxed mb-6">
+          Enviamos um link de confirmação para <strong className="text-slate-700">{email}</strong>.
+          Clique no link para ativar sua conta e acessar o sistema.
+        </p>
+        <p className="text-xs text-slate-400">
+          Não recebeu?{' '}
+          <button onClick={() => setDone(false)} className="text-blue-600 hover:underline">
+            Tentar novamente
+          </button>
+        </p>
+        <div className="mt-6 pt-6 border-t border-slate-100">
+          <Link href="/login" className="text-sm text-blue-600 font-medium hover:underline">
+            Já confirmei — Entrar
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="w-full max-w-md">
       <div className="bg-white rounded-2xl shadow-xl p-8">
         <div className="flex items-center justify-center gap-2 mb-6">
-          <div className="w-9 h-9 bg-[#1E3A5F]/10 rounded-lg flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-[#1E3A5F]" />
+          <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-blue-600" />
           </div>
           <div className="text-center">
             <h1 className="text-xl font-bold text-slate-900">Criar conta de Gestor</h1>
@@ -104,7 +123,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-slate-500 mt-6">
           Já tem conta?{' '}
-          <Link href="/login" className="text-[#1E3A5F] font-medium hover:underline">Entrar</Link>
+          <Link href="/login" className="text-blue-600 font-medium hover:underline">Entrar</Link>
         </p>
       </div>
     </div>
