@@ -71,7 +71,9 @@ export default function LoginPage() {
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
         <div className="px-8 py-8" style={{ background: 'linear-gradient(135deg, #030b1a, #0f2060)' }}>
           <div className="flex items-center gap-2 mb-6">
-            <img src="/logo.png" alt="Logipilot AI" className="h-7 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-1.5">
+            <img src="/logo.png" alt="Logipilot AI" className="h-6 w-auto" />
+          </div>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-4">
             <Building2 className="w-6 h-6 text-sky-400" />

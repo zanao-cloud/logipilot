@@ -4,11 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   PlusCircle, FileText, Clock, CheckCircle, AlertCircle,
-  TrendingUp, BarChart3, Brain, Users, Truck, Shield,
-  ArrowRight, UserCog,
+  TrendingUp, BarChart3, Brain, Users, Truck, Shield, ArrowRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, getFileIcon } from '@/lib/utils'
 import { useProfile } from '@/lib/hooks/use-profile'
@@ -38,20 +36,28 @@ export default function DashboardPage() {
     }
   }, [isGestor])
 
-  const completed = analyses.filter(a => a.status === 'completed').length
+  const completed  = analyses.filter(a => a.status === 'completed').length
   const processing = analyses.filter(a => a.status === 'processing').length
-  const errors = analyses.filter(a => a.status === 'error').length
-
-  const operadores  = team.filter(m => m.role === 'operador').length
-  const motoristas  = team.filter(m => m.role === 'motorista').length
-  const gestores    = team.filter(m => m.role === 'gestor').length
+  const errors     = analyses.filter(a => a.status === 'error').length
+  const operadores = team.filter(m => m.role === 'operador').length
+  const motoristas = team.filter(m => m.role === 'motorista').length
+  const gestores   = team.filter(m => m.role === 'gestor').length
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen bg-[#060d1a] p-8">
+
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Central de análise operacional</p>
+          <p className="text-xs font-semibold text-sky-400 uppercase tracking-widest mb-1">Central de análise</p>
+          <h1 className="text-2xl font-bold text-white">
+            {profile?.full_name?.split(' ')[0]
+              ? `Olá, ${profile.full_name.split(' ')[0]}`
+              : 'Dashboard'}
+          </h1>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {profile?.organizations?.name || 'Gestão operacional'}
+          </p>
         </div>
         <Link href="/analysis/new">
           <Button size="lg" className="gap-2">
@@ -61,55 +67,59 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Análises stats */}
+      {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total de Análises', value: analyses.length, icon: FileText,     color: 'text-blue-600 bg-blue-50' },
-          { label: 'Concluídas',        value: completed,       icon: CheckCircle,  color: 'text-emerald-600 bg-emerald-50' },
-          { label: 'Processando',       value: processing,      icon: Clock,        color: 'text-amber-600 bg-amber-50' },
-          { label: 'Com Erros',         value: errors,          icon: AlertCircle,  color: 'text-red-600 bg-red-50' },
-        ].map(stat => (
-          <Card key={stat.label}>
-            <CardContent className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl ${stat.color} flex items-center justify-center flex-shrink-0`}>
-                <stat.icon className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                <p className="text-xs text-slate-500">{stat.label}</p>
-              </div>
-            </CardContent>
-          </Card>
+          { label: 'Total',       value: analyses.length, Icon: FileText,    color: '#3b82f6', glow: 'rgba(59,130,246,0.18)' },
+          { label: 'Concluídas',  value: completed,       Icon: CheckCircle, color: '#10b981', glow: 'rgba(16,185,129,0.18)' },
+          { label: 'Processando', value: processing,      Icon: Clock,       color: '#f59e0b', glow: 'rgba(245,158,11,0.18)' },
+          { label: 'Com Erros',   value: errors,          Icon: AlertCircle, color: '#ef4444', glow: 'rgba(239,68,68,0.18)' },
+        ].map(s => (
+          <div key={s.label} className="rounded-2xl p-5 flex items-center gap-4"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${s.color}18`, boxShadow: `0 0 16px ${s.glow}`, border: `1px solid ${s.color}28` }}>
+              <s.Icon className="w-5 h-5" style={{ color: s.color }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{s.value}</p>
+              <p className="text-xs text-slate-500">{s.label}</p>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Equipe resumo (gestores) */}
+      {/* Team (gestors only) */}
       {isGestor && team.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-slate-800">Equipe</h2>
-            <Link href="/dashboard/equipe" className="flex items-center gap-1 text-sm text-[#1E3A5F] hover:underline font-medium">
+            <h2 className="text-base font-semibold text-white">Equipe</h2>
+            <Link href="/dashboard/acessos"
+              className="flex items-center gap-1 text-sm text-sky-400 hover:text-sky-300 font-medium transition-colors">
               Gerenciar <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Gestores',   value: gestores,   icon: Shield, color: 'text-blue-600 bg-blue-50',     href: '/dashboard/equipe' },
-              { label: 'Operadores', value: operadores, icon: Users,  color: 'text-amber-600 bg-amber-50',   href: '/dashboard/equipe' },
-              { label: 'Motoristas', value: motoristas, icon: Truck,  color: 'text-emerald-600 bg-emerald-50', href: '/dashboard/motoristas' },
+              { label: 'Gestores',   value: gestores,   Icon: Shield, color: '#3b82f6', href: '/dashboard/acessos' },
+              { label: 'Operadores', value: operadores, Icon: Users,  color: '#f59e0b', href: '/dashboard/acessos' },
+              { label: 'Motoristas', value: motoristas, Icon: Truck,  color: '#38bdf8', href: '/dashboard/motoristas' },
             ].map(item => (
               <Link key={item.label} href={item.href}>
-                <Card hover>
-                  <CardContent className="flex items-center gap-3 py-4">
-                    <div className={`w-9 h-9 rounded-xl ${item.color} flex items-center justify-center flex-shrink-0`}>
-                      <item.icon className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-slate-800">{item.value}</p>
-                      <p className="text-xs text-slate-500">{item.label}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="rounded-2xl p-5 flex items-center gap-3 transition-all cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${item.color}14`, border: `1px solid ${item.color}28`, boxShadow: `0 0 12px ${item.color}20` }}>
+                    <item.Icon className="w-4 h-4" style={{ color: item.color }} />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-white">{item.value}</p>
+                    <p className="text-xs text-slate-500">{item.label}</p>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>
@@ -118,34 +128,40 @@ export default function DashboardPage() {
 
       {/* Empty state */}
       {analyses.length === 0 && !loading && (
-        <div className="mb-8 bg-gradient-to-br from-[#0F1B2D] to-[#1E3A5F] rounded-2xl p-8 text-white">
-          <div className="flex flex-col md:flex-row items-center gap-8">
+        <div className="mb-8 rounded-2xl p-8 overflow-hidden relative"
+          style={{ background: 'linear-gradient(135deg, #0a1628, #0f2060, #0a1628)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(14,165,233,0.08) 0%, transparent 65%)' }} />
+          <div className="relative flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1">
-              <div className="inline-flex items-center gap-2 bg-white/10 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+              <div className="inline-flex items-center gap-2 text-sky-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-4"
+                style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)' }}>
                 <Brain className="w-3 h-3" />
                 Comece agora
               </div>
-              <h2 className="text-2xl font-bold mb-3">Sua primeira análise está a um upload de distância</h2>
-              <p className="text-slate-300 mb-6">
+              <h2 className="text-2xl font-bold text-white mb-3">
+                Sua primeira análise está a um upload de distância
+              </h2>
+              <p className="text-slate-400 mb-6">
                 Envie Excel, CSV, PDF, imagens ou prints — a IA gera diagnóstico completo com
                 resumo executivo, indicadores, gargalos, riscos e plano de ação.
               </p>
               <Link href="/analysis/new">
-                <Button variant="secondary" size="lg">Iniciar primeira análise</Button>
+                <Button size="lg" className="gap-2">
+                  <PlusCircle className="w-4 h-4" />
+                  Iniciar primeira análise
+                </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3 flex-shrink-0">
               {[
-                { icon: '📊', label: 'Excel / CSV' },
-                { icon: '📄', label: 'PDFs' },
-                { icon: '🖼️', label: 'Imagens' },
-                { icon: '📸', label: 'Prints' },
-                { icon: '📈', label: 'Power BI' },
-                { icon: '📝', label: 'Textos' },
-              ].map(f => (
-                <div key={f.label} className="bg-white/10 rounded-xl p-3 text-center">
-                  <div className="text-2xl mb-1">{f.icon}</div>
-                  <p className="text-xs text-slate-300">{f.label}</p>
+                ['📊', 'Excel / CSV'], ['📄', 'PDFs'], ['🖼️', 'Imagens'],
+                ['📸', 'Prints'], ['📈', 'Power BI'], ['📝', 'Textos'],
+              ].map(([icon, label]) => (
+                <div key={label} className="rounded-xl p-3 text-center"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="text-2xl mb-1">{icon}</div>
+                  <p className="text-xs text-slate-400">{label}</p>
                 </div>
               ))}
             </div>
@@ -156,27 +172,26 @@ export default function DashboardPage() {
       {/* Recent analyses */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-slate-800">Análises recentes</h2>
+          <h2 className="text-base font-semibold text-white">Análises recentes</h2>
           {analyses.length > 5 && (
-            <Link href="/history" className="text-sm text-[#1E3A5F] hover:underline">Ver todas</Link>
+            <Link href="/history" className="text-sm text-sky-400 hover:text-sky-300 transition-colors">Ver todas</Link>
           )}
         </div>
 
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white rounded-xl h-20 animate-pulse border border-slate-100" />
+              <div key={i} className="rounded-xl h-20 animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
             ))}
           </div>
         ) : analyses.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <BarChart3 className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-400">Nenhuma análise ainda. Crie sua primeira!</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl py-12 text-center"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <BarChart3 className="w-12 h-12 text-slate-700 mx-auto mb-3" />
+            <p className="text-slate-500">Nenhuma análise ainda. Crie sua primeira!</p>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {analyses.slice(0, 10).map(analysis => (
               <AnalysisCard key={analysis.id} analysis={analysis} />
             ))}
@@ -192,37 +207,39 @@ function AnalysisCard({ analysis }: { analysis: Analysis }) {
     completed:  { label: 'Concluída',   variant: 'success' as const },
     processing: { label: 'Processando', variant: 'warning' as const },
     pending:    { label: 'Pendente',    variant: 'default' as const },
-    error:      { label: 'Erro',        variant: 'danger' as const },
+    error:      { label: 'Erro',        variant: 'danger'  as const },
   }
-
   const config = statusConfig[analysis.status]
   const isClickable = analysis.status === 'completed'
   const files = (analysis.files as { name: string; type: string }[]) || []
 
   const content = (
-    <Card hover={isClickable}>
-      <CardContent className="flex items-center gap-4 py-4">
-        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg flex-shrink-0">
-          {files[0] ? getFileIcon(files[0].type, files[0].name) : '📁'}
+    <div className="flex items-center gap-4 px-5 py-4 rounded-xl transition-all"
+      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+      onMouseEnter={e => { if (isClickable) e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
+      onMouseLeave={e => { if (isClickable) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+    >
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        {files[0] ? getFileIcon(files[0].type, files[0].name) : '📁'}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-white truncate">{analysis.title}</p>
+        <div className="flex items-center gap-3 mt-1">
+          <span className="text-xs text-slate-500">{formatDate(analysis.created_at)}</span>
+          <span className="text-xs text-slate-700">•</span>
+          <span className="text-xs text-slate-500">{files.length} arquivo{files.length !== 1 ? 's' : ''}</span>
+          {analysis.status === 'error' && analysis.error_message && (
+            <>
+              <span className="text-xs text-slate-700">•</span>
+              <span className="text-xs text-red-400 truncate max-w-xs">{analysis.error_message}</span>
+            </>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-slate-800 truncate">{analysis.title}</p>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs text-slate-400">{formatDate(analysis.created_at)}</span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs text-slate-400">{files.length} arquivo{files.length !== 1 ? 's' : ''}</span>
-            {analysis.status === 'error' && analysis.error_message && (
-              <>
-                <span className="text-xs text-slate-400">•</span>
-                <span className="text-xs text-red-500 truncate max-w-xs">{analysis.error_message}</span>
-              </>
-            )}
-          </div>
-        </div>
-        <Badge variant={config.variant}>{config.label}</Badge>
-        {isClickable && <TrendingUp className="w-4 h-4 text-slate-300 flex-shrink-0" />}
-      </CardContent>
-    </Card>
+      </div>
+      <Badge variant={config.variant}>{config.label}</Badge>
+      {isClickable && <TrendingUp className="w-4 h-4 text-slate-600 flex-shrink-0" />}
+    </div>
   )
 
   return isClickable ? <Link href={`/analysis/${analysis.id}`}>{content}</Link> : content
