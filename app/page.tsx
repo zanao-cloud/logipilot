@@ -625,7 +625,7 @@ export default function LandingPage() {
                 <p className="text-sm text-slate-400">Cobrado mensalmente</p>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
-                {['Análises ilimitadas', 'Todos os formatos (PDF, PPTX, imagens)', 'Diagnóstico completo com IA', 'Plano de ação com prioridades', 'Chat com os dados', 'Exportação em PDF', 'Histórico completo', 'Até 5 usuários'].map(f => (
+                {['25 análises por mês', 'Todos os formatos (PDF, PPTX, imagens)', 'Diagnóstico completo com IA', 'Plano de ação com prioridades', 'Chat com os dados', 'Exportação em PDF', 'Histórico completo', 'Até 5 usuários'].map(f => (
                   <li key={f} className="flex items-center gap-2 text-sm text-white/80">
                     <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />{f}
                   </li>
@@ -653,7 +653,7 @@ export default function LandingPage() {
                 <p className="text-sm text-slate-600">Para frotas e operações maiores</p>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
-                {['Tudo do plano Pro', 'Usuários ilimitados', 'Gestão de motoristas', 'Supervisão de equipe', 'Análises por organização', 'Suporte prioritário', 'Onboarding dedicado'].map(f => (
+                {['125 análises por mês', 'Até 25 usuários', 'Gestão de motoristas', 'Supervisão de equipe', 'Análises por organização', 'Suporte prioritário', 'Onboarding dedicado'].map(f => (
                   <li key={f} className="flex items-center gap-2 text-sm text-slate-400">
                     <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />{f}
                   </li>
