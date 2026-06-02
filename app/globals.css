@@ -31,3 +31,58 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in { animation: fadeIn 0.35s ease-out; }
+
+@keyframes lp-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+}
+@keyframes lp-float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+@keyframes lp-float-card {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes lp-pulse-ring {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.06); }
+}
+@keyframes lp-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+@keyframes lp-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes lp-orbit {
+  from { transform: rotate(0deg) translateX(140px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(140px) rotate(-360deg); }
+}
+@keyframes lp-orbit2 {
+  from { transform: rotate(120deg) translateX(110px) rotate(-120deg); }
+  to   { transform: rotate(480deg) translateX(110px) rotate(-480deg); }
+}
+@keyframes lp-orbit3 {
+  from { transform: rotate(240deg) translateX(160px) rotate(-240deg); }
+  to   { transform: rotate(600deg) translateX(160px) rotate(-600deg); }
+}
+@keyframes lp-dash {
+  to { stroke-dashoffset: -40; }
+}
+.lp-float      { animation: lp-float 7s ease-in-out infinite; }
+.lp-float-slow { animation: lp-float-slow 10s ease-in-out infinite; }
+.lp-card-1     { animation: lp-float-card 5s ease-in-out infinite; }
+.lp-card-2     { animation: lp-float-card 6s ease-in-out infinite 1s; }
+.lp-card-3     { animation: lp-float-card 5.5s ease-in-out infinite 2s; }
+.lp-card-4     { animation: lp-float-card 7s ease-in-out infinite 0.5s; }
+.lp-pulse-ring { animation: lp-pulse-ring 4s ease-in-out infinite; }
+.lp-glow       { animation: lp-glow 3s ease-in-out infinite; }
+.lp-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.lp-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 48px rgba(14,165,233,0.12);
+}

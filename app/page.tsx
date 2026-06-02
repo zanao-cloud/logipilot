@@ -1,125 +1,418 @@
+'use client'
+
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import {
-  Zap, Upload, Brain, FileText, BarChart3, MessageSquare,
-  CheckCircle, ArrowRight, Shield, TrendingUp, Target, ChevronRight, Star,
+  Zap, ArrowRight, CheckCircle, Shield, Brain, BarChart3,
+  FileText, Target, MessageSquare, Upload, TrendingUp,
+  Star, Activity, AlertTriangle, Layers, Sparkles,
 } from 'lucide-react'
 
-export default function LandingPage() {
+/* ─── Sub-components ─── */
+
+function DataOrb() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur border-b border-slate-100">
+    <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto lp-float">
+      {/* Outer atmosphere */}
+      <div className="absolute inset-[-40%] rounded-full lp-pulse-ring" style={{
+        background: 'radial-gradient(circle, rgba(14,165,233,0.07) 0%, transparent 65%)',
+        filter: 'blur(24px)',
+      }} />
+      {/* Mid ring */}
+      <div className="absolute inset-[-12%] rounded-full lp-pulse-ring" style={{
+        background: 'radial-gradient(circle, transparent 46%, rgba(56,189,248,0.1) 54%, transparent 65%)',
+      }} />
+      {/* Core sphere */}
+      <div className="absolute inset-0 rounded-full" style={{
+        background: 'radial-gradient(ellipse at 32% 28%, rgba(186,230,253,0.85) 0%, rgba(56,189,248,0.7) 18%, rgba(14,165,233,0.65) 34%, rgba(2,132,199,0.55) 52%, rgba(12,74,110,0.8) 70%, rgba(3,30,60,0.95) 85%, #020408 100%)',
+        boxShadow: '0 0 70px rgba(14,165,233,0.45), 0 0 140px rgba(14,165,233,0.15), 0 0 300px rgba(56,189,248,0.06), inset 0 0 80px rgba(0,0,0,0.45)',
+      }} />
+      {/* Specular highlight */}
+      <div className="absolute rounded-full" style={{
+        top: '10%', left: '16%', width: '38%', height: '24%',
+        background: 'radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.08) 60%, transparent 100%)',
+        filter: 'blur(6px)',
+      }} />
+      {/* SVG globe lines + data nodes */}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 120 120" style={{ opacity: 0.35 }}>
+        <ellipse cx="60" cy="60" rx="58" ry="22" fill="none" stroke="rgba(56,189,248,0.5)" strokeWidth="0.6" strokeDasharray="4 3">
+          <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="20s" repeatCount="indefinite" />
+        </ellipse>
+        <ellipse cx="60" cy="60" rx="22" ry="58" fill="none" stroke="rgba(56,189,248,0.3)" strokeWidth="0.6" strokeDasharray="4 3" />
+        <circle cx="42" cy="40" r="2" fill="rgba(56,189,248,0.9)">
+          <animate attributeName="r" values="2;2.8;2" dur="2.5s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="82" cy="50" r="1.5" fill="rgba(56,189,248,0.7)">
+          <animate attributeName="r" values="1.5;2.2;1.5" dur="3s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="65" cy="78" r="1.8" fill="rgba(56,189,248,0.8)">
+          <animate attributeName="r" values="1.8;2.5;1.8" dur="2s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="48" cy="70" r="1.2" fill="rgba(56,189,248,0.6)" />
+        <line x1="42" y1="40" x2="82" y2="50" stroke="rgba(56,189,248,0.25)" strokeWidth="0.4" />
+        <line x1="82" y1="50" x2="65" y2="78" stroke="rgba(56,189,248,0.25)" strokeWidth="0.4" />
+        <line x1="42" y1="40" x2="48" y2="70" stroke="rgba(56,189,248,0.2)" strokeWidth="0.4" />
+        <line x1="48" y1="70" x2="65" y2="78" stroke="rgba(56,189,248,0.2)" strokeWidth="0.4" />
+      </svg>
+      {/* Inner texture layer */}
+      <div className="absolute inset-[8%] rounded-full" style={{
+        background: 'radial-gradient(ellipse at 65% 38%, rgba(99,102,241,0.18) 0%, transparent 55%), radial-gradient(ellipse at 28% 72%, rgba(14,165,233,0.14) 0%, transparent 55%)',
+        filter: 'blur(5px)',
+      }} />
+    </div>
+  )
+}
+
+type CardProps = { children: React.ReactNode; className?: string; animClass?: string }
+
+function HoloCard({ children, className = '', animClass = 'lp-card-1' }: CardProps) {
+  return (
+    <div className={`absolute ${animClass} ${className}`} style={{
+      background: 'rgba(8,15,32,0.82)',
+      border: '1px solid rgba(56,189,248,0.18)',
+      backdropFilter: 'blur(16px)',
+      borderRadius: '14px',
+      padding: '12px 14px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+/* ─── Main page ─── */
+
+export default function LandingPage() {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <div className="min-h-screen bg-[#020408] text-white overflow-x-hidden">
+
+      {/* ── Navbar ── */}
+      <header className="fixed top-0 w-full z-50 transition-all duration-500" style={{
+        background: scrolled ? 'rgba(2,4,8,0.88)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(20px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
+      }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20" style={{
+              background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
+            }}>
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-[#0F1B2D]">LogiPilot <span className="text-emerald-500">AI</span></span>
+            <span className="font-bold text-white">LogiPilot <span className="text-cyan-400">AI</span></span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm text-slate-600">
-            <a href="#features" className="hover:text-[#1E3A5F] transition-colors">Funcionalidades</a>
-            <a href="#how" className="hover:text-[#1E3A5F] transition-colors">Como funciona</a>
-            <a href="#formats" className="hover:text-[#1E3A5F] transition-colors">Formatos</a>
-            <a href="#pricing" className="hover:text-[#1E3A5F] transition-colors">Preços</a>
+          <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400">
+            <a href="#features" className="hover:text-white transition-colors">Funcionalidades</a>
+            <a href="#how"      className="hover:text-white transition-colors">Como funciona</a>
+            <a href="#formats"  className="hover:text-white transition-colors">Formatos</a>
+            <a href="#pricing"  className="hover:text-white transition-colors">Preços</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-[#1E3A5F] transition-colors">
+            <Link href="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
               Entrar
             </Link>
-            <Link href="/register" className="bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+            <Link href="/register" className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition-all" style={{
+              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.25)',
+            }}>
               Começar grátis
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="pt-32 pb-20 px-6 bg-gradient-to-br from-[#0F1B2D] via-[#1E3A5F] to-[#0F1B2D]">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-8 border border-emerald-400/30">
-            <Zap className="w-3 h-3" />
+      {/* ── Hero ── */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full" style={{
+            background: 'radial-gradient(circle, rgba(14,165,233,0.07) 0%, rgba(56,189,248,0.03) 45%, transparent 70%)',
+          }} />
+          <div className="absolute top-1/4 left-1/5 w-80 h-80 rounded-full" style={{
+            background: 'radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }} />
+          <div className="absolute bottom-1/4 right-1/5 w-72 h-72 rounded-full" style={{
+            background: 'radial-gradient(circle, rgba(16,185,129,0.035) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }} />
+          {/* Subtle grid */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
+            backgroundSize: '64px 64px',
+            maskImage: 'radial-gradient(ellipse at 50% 50%, black 30%, transparent 75%)',
+          }} />
+        </div>
+
+        {/* Orb + floating cards */}
+        <div className="relative z-10 mb-14">
+          <DataOrb />
+
+          {/* Score card — top-left */}
+          <HoloCard className="hidden md:block -top-6 -left-40" animClass="lp-card-1">
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Score Operacional</p>
+            <p className="text-2xl font-bold text-amber-400 leading-none">74<span className="text-sm text-slate-500 font-normal">/100</span></p>
+          </HoloCard>
+
+          {/* Files card — top-right */}
+          <HoloCard className="hidden md:block top-6 -right-44" animClass="lp-card-2">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Activity className="w-3 h-3 text-cyan-400 lp-glow" />
+              <p className="text-[10px] text-slate-400">Processando arquivos</p>
+            </div>
+            <div className="flex gap-1.5">
+              {['.xlsx', '.pdf', '.csv'].map(f => (
+                <span key={f} className="px-2 py-0.5 rounded text-[10px] font-mono text-cyan-300" style={{
+                  background: 'rgba(6,182,212,0.1)',
+                  border: '1px solid rgba(6,182,212,0.2)',
+                }}>{f}</span>
+              ))}
+            </div>
+          </HoloCard>
+
+          {/* Gargalos card — bottom-left */}
+          <HoloCard className="hidden md:block -bottom-4 -left-44" animClass="lp-card-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+              <p className="text-[10px] text-slate-300">3 gargalos detectados</p>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1 pl-5">Setor de logística</p>
+          </HoloCard>
+
+          {/* Oportunidades card — bottom-right */}
+          <HoloCard className="hidden md:block bottom-2 -right-36" animClass="lp-card-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              <p className="text-[10px] text-slate-300">5 oportunidades</p>
+            </div>
+            <div className="w-24 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div className="h-full rounded-full w-3/5" style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+            </div>
+          </HoloCard>
+        </div>
+
+        {/* Headline */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full text-xs font-semibold text-cyan-400" style={{
+            background: 'rgba(6,182,212,0.08)',
+            border: '1px solid rgba(6,182,212,0.2)',
+          }}>
+            <Sparkles className="w-3 h-3" />
             IA Multimodal para Análise Operacional
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6">
-            Envie arquivos, relatórios,{' '}
-            <span className="text-emerald-400">prints</span> ou planilhas.
+
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 tracking-tight">
+            Você não está enviando arquivos.<br className="hidden sm:block" />
+            <span style={{
+              backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa, #818cf8)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              {' '}Está ativando um analista
+            </span>{' '}
+            <span className="text-white">operacional com IA.</span>
           </h1>
-          <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-4">
-            O LogiPilot AI transforma dados espalhados em{' '}
-            <span className="text-white font-semibold">decisões operacionais.</span>
+
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            O LogiPilot AI transforma planilhas, PDFs, prints, relatórios e dados soltos em
+            diagnóstico, indicadores, gargalos, oportunidades e plano de ação — em minutos.
           </p>
-          <p className="text-slate-400 max-w-2xl mx-auto mb-10">
-            Diagnóstico completo com IA: resumo executivo, indicadores, gargalos, riscos,
-            inconsistências, oportunidades e plano de ação — em minutos.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-3.5 rounded-xl transition-all text-base shadow-lg shadow-emerald-500/25">
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+            <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-semibold px-8 py-4 rounded-xl text-base transition-all hover:opacity-90" style={{
+              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+              boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 24px rgba(0,0,0,0.4)',
+            }}>
               Analisar meus dados agora
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/login" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white font-medium px-8 py-3.5 rounded-xl transition-all text-base border border-white/20">
-              Já tenho conta
-            </Link>
+            <a href="#how" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-medium px-8 py-4 rounded-xl text-base transition-all hover:bg-white/10" style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}>
+              Ver como funciona
+            </a>
           </div>
-          <div className="flex items-center justify-center gap-6 mt-10 text-sm text-slate-400 flex-wrap">
-            {['Sem necessidade de BI', 'Multimodal (Excel, PDF, imagens)', 'Resultado em minutos'].map((item) => (
-              <div key={item} className="flex items-center gap-1.5">
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                {item}
+
+          {/* Trust badges */}
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            {[
+              'Sem necessidade de BI',
+              'Multimodal: Excel, PDF, imagens e relatórios',
+              'Resultado em minutos',
+              'IA baseada somente nos seus dados',
+            ].map(badge => (
+              <div key={badge} className="flex items-center gap-1.5 text-xs text-slate-500 px-3 py-1.5 rounded-full" style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                {badge}
               </div>
             ))}
           </div>
         </div>
-        {/* Dashboard mockup */}
-        <div className="max-w-4xl mx-auto mt-16">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-1">
-            <div className="bg-[#0F1B2D] rounded-xl p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                <span className="ml-2 text-xs text-slate-500">logipilot.ai — análise operacional</span>
+
+        {/* Scroll line */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0 opacity-20">
+          <div className="w-px h-14 lp-glow" style={{
+            background: 'linear-gradient(to bottom, transparent, rgba(56,189,248,0.8))',
+          }} />
+        </div>
+      </section>
+
+      {/* ── Dashboard 3D Mockup ── */}
+      <section className="py-24 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: 'radial-gradient(ellipse at 50% 60%, rgba(14,165,233,0.05) 0%, transparent 65%)',
+        }} />
+        <div className="max-w-5xl mx-auto relative z-10">
+          <p className="text-center text-xs font-semibold text-slate-600 uppercase tracking-widest mb-14">
+            Dashboard analítico gerado automaticamente pela IA
+          </p>
+          <div style={{ perspective: '1400px' }}>
+            <div className="lp-float-slow rounded-2xl overflow-hidden" style={{
+              transform: 'rotateX(7deg) rotateY(-2deg)',
+              transformStyle: 'preserve-3d',
+              background: 'rgba(6,11,22,0.97)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              boxShadow: '0 60px 120px rgba(0,0,0,0.75), 0 0 80px rgba(14,165,233,0.08), 0 0 0 1px rgba(14,165,233,0.05)',
+            }}>
+              {/* Chrome bar */}
+              <div className="flex items-center gap-2 px-5 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/60" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
+                <span className="ml-3 text-xs text-slate-600 font-mono">logipilot.ai — análise operacional</span>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 lp-glow" />
+                  <span className="text-[10px] text-emerald-400">Análise concluída</span>
+                </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                {[
-                  { label: 'Score Operacional', value: '74/100', color: 'text-amber-400' },
-                  { label: 'Indicadores', value: '12', color: 'text-emerald-400' },
-                  { label: 'Gargalos', value: '3', color: 'text-red-400' },
-                  { label: 'Oportunidades', value: '5', color: 'text-blue-400' },
-                ].map((item) => (
-                  <div key={item.label} className="bg-white/5 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 mb-1">{item.label}</p>
-                    <p className={`text-xl font-bold ${item.color}`}>{item.value}</p>
+
+              <div className="p-6">
+                {/* KPI row */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                  {/* Score */}
+                  <div className="flex flex-col items-center justify-center rounded-xl py-4" style={{
+                    background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04))',
+                    border: '1px solid rgba(245,158,11,0.18)',
+                  }}>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Score</p>
+                    <p className="text-3xl font-bold text-amber-400 leading-none">74</p>
+                    <p className="text-[10px] text-slate-600 mt-0.5">/100</p>
                   </div>
-                ))}
-              </div>
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-sm text-emerald-300">
-                ✓ Análise concluída · 3 arquivos processados · Plano de ação com 8 itens gerado
+                  {[
+                    { label: 'Indicadores',   value: '12', color: 'text-cyan-400',    from: 'rgba(6,182,212,0.12)',   border: 'rgba(6,182,212,0.18)' },
+                    { label: 'Gargalos',      value: '3',  color: 'text-red-400',     from: 'rgba(239,68,68,0.1)',    border: 'rgba(239,68,68,0.16)' },
+                    { label: 'Oportunidades', value: '5',  color: 'text-emerald-400', from: 'rgba(16,185,129,0.1)',   border: 'rgba(16,185,129,0.16)' },
+                    { label: 'Plano de ação', value: '8',  color: 'text-violet-400',  from: 'rgba(139,92,246,0.1)',   border: 'rgba(139,92,246,0.16)' },
+                  ].map(s => (
+                    <div key={s.label} className="rounded-xl p-3" style={{
+                      background: `linear-gradient(135deg, ${s.from}, rgba(6,11,22,0.8))`,
+                      border: `1px solid ${s.border}`,
+                    }}>
+                      <p className="text-[10px] text-slate-500 mb-1">{s.label}</p>
+                      <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Charts row */}
+                <div className="grid md:grid-cols-3 gap-3 mb-3">
+                  {/* Bar chart */}
+                  <div className="md:col-span-2 rounded-xl p-4" style={{
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                  }}>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-3">Desempenho por período</p>
+                    <div className="flex items-end gap-2 h-16">
+                      {[38, 62, 44, 78, 52, 68, 74].map((h, i) => (
+                        <div key={i} className="flex-1 rounded-t" style={{
+                          height: `${h}%`,
+                          background: i === 6
+                            ? 'linear-gradient(to top, rgba(6,182,212,0.9), rgba(56,189,248,0.6))'
+                            : 'rgba(255,255,255,0.055)',
+                          boxShadow: i === 6 ? '0 0 12px rgba(6,182,212,0.35)' : 'none',
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Donut */}
+                  <div className="rounded-xl p-4 flex flex-col items-center justify-center" style={{
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                  }}>
+                    <div className="relative w-16 h-16">
+                      <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
+                        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                        <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(6,182,212,0.8)" strokeWidth="8"
+                          strokeDasharray="163.4" strokeDashoffset="44" strokeLinecap="round" />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-xs font-bold text-cyan-400">74%</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-2">Saúde geral</p>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="flex items-center gap-3 rounded-xl px-4 py-2.5" style={{
+                  background: 'rgba(16,185,129,0.05)',
+                  border: '1px solid rgba(16,185,129,0.14)',
+                }}>
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <span className="text-xs text-emerald-300">
+                    3 arquivos processados · Plano de ação com 8 itens · Diagnóstico completo gerado
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Floor reflection */}
+            <div className="absolute inset-x-12 rounded-b-2xl" style={{
+              top: '100%', height: '60px',
+              background: 'linear-gradient(to bottom, rgba(6,182,212,0.06), transparent)',
+              filter: 'blur(10px)',
+              transform: 'scaleY(-0.25) translateY(-8px)',
+            }} />
           </div>
         </div>
       </section>
 
-      {/* Formats */}
-      <section id="formats" className="py-16 px-6 bg-slate-50">
+      {/* ── Formats ── */}
+      <section id="formats" className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
-          <p className="text-center text-sm font-semibold text-slate-500 uppercase tracking-wider mb-8">
+          <p className="text-center text-xs font-semibold text-slate-600 uppercase tracking-widest mb-12">
             Aceita qualquer formato de dados
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {[
-              { icon: '📊', label: 'Excel / XLSX' },
-              { icon: '📋', label: 'CSV' },
-              { icon: '📄', label: 'PDF' },
-              { icon: '📑', label: 'PowerPoint' },
-              { icon: '🖼️', label: 'Imagens' },
-              { icon: '📸', label: 'Prints / Fotos' },
-              { icon: '📝', label: 'Texto' },
-              { icon: '📈', label: 'Relatórios Power BI' },
-            ].map((f) => (
-              <div key={f.label} className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
-                <span>{f.icon}</span>
+              { icon: '📊', label: 'Excel / XLSX', glow: 'rgba(52,211,153,0.08)' },
+              { icon: '📋', label: 'CSV',           glow: 'rgba(52,211,153,0.08)' },
+              { icon: '📄', label: 'PDF',           glow: 'rgba(239,68,68,0.08)'  },
+              { icon: '📑', label: 'PowerPoint',    glow: 'rgba(249,115,22,0.08)' },
+              { icon: '🖼️', label: 'Imagens',       glow: 'rgba(139,92,246,0.08)' },
+              { icon: '📸', label: 'Prints / Fotos',glow: 'rgba(139,92,246,0.08)' },
+              { icon: '📝', label: 'Texto',         glow: 'rgba(148,163,184,0.06)'},
+              { icon: '📈', label: 'Power BI',      glow: 'rgba(234,179,8,0.08)'  },
+            ].map(f => (
+              <div key={f.label} className="lp-hover flex items-center gap-2.5 text-sm font-medium text-slate-300 px-4 py-3 rounded-xl cursor-default" style={{
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                boxShadow: `0 0 24px ${f.glow}`,
+              }}>
+                <span className="text-lg">{f.icon}</span>
                 {f.label}
               </div>
             ))}
@@ -127,30 +420,49 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
+      {/* ── Features ── */}
+      <section id="features" className="py-24 px-6 relative">
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: 'radial-gradient(ellipse at 50% 90%, rgba(99,102,241,0.04) 0%, transparent 55%)',
+        }} />
+        <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-[#0F1B2D] mb-4">Tudo que você precisa para decisões operacionais</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Tudo que você precisa para{' '}
+              <span style={{
+                backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>
+                decisões operacionais
+              </span>
+            </h2>
             <p className="text-slate-500 max-w-2xl mx-auto">
-              O LogiPilot AI atua como um analista operacional júnior —
-              separando fatos, hipóteses e recomendações com base somente nos seus dados.
+              O LogiPilot AI atua como um analista operacional júnior — separando fatos,
+              hipóteses e recomendações com base somente nos seus dados.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5">
             {[
-              { icon: FileText, color: 'bg-blue-50 text-blue-600', title: 'Resumo Executivo', desc: 'Visão geral clara com highlights principais, indicadores encontrados e período analisado.' },
-              { icon: Brain, color: 'bg-purple-50 text-purple-600', title: 'Diagnóstico com IA', desc: 'Score de saúde operacional, fatos observados, hipóteses e recomendações priorizadas.' },
-              { icon: BarChart3, color: 'bg-emerald-50 text-emerald-600', title: 'Dashboard Automático', desc: 'Quando há dados estruturados, gera gráficos interativos automaticamente.' },
-              { icon: Shield, color: 'bg-red-50 text-red-600', title: 'Riscos e Gargalos', desc: 'Identifica pontos críticos com severidade, evidências nos dados e impacto estimado.' },
-              { icon: Target, color: 'bg-amber-50 text-amber-600', title: 'Plano de Ação', desc: 'Ações priorizadas com prazo, esforço e resultado esperado — prontas para executar.' },
-              { icon: MessageSquare, color: 'bg-slate-50 text-slate-600', title: 'Chat com os Dados', desc: 'Faça perguntas sobre sua análise. A IA responde com base somente nos dados enviados.' },
-            ].map((f) => (
-              <div key={f.title} className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className={`w-10 h-10 rounded-lg ${f.color} flex items-center justify-center mb-4`}>
-                  <f.icon className="w-5 h-5" />
+              { icon: FileText,     accent: '#3b82f6',  title: 'Resumo Executivo',    desc: 'Visão clara com highlights principais, indicadores encontrados e período analisado.' },
+              { icon: Brain,        accent: '#8b5cf6',  title: 'Diagnóstico com IA',  desc: 'Score de saúde operacional, fatos observados, hipóteses e recomendações priorizadas.' },
+              { icon: BarChart3,    accent: '#10b981',  title: 'Dashboard Automático',desc: 'Quando há dados estruturados, gera gráficos interativos automaticamente.' },
+              { icon: Shield,       accent: '#ef4444',  title: 'Riscos e Gargalos',   desc: 'Identifica pontos críticos com severidade, evidências e impacto estimado.' },
+              { icon: Target,       accent: '#f59e0b',  title: 'Plano de Ação',       desc: 'Ações priorizadas com prazo, esforço e resultado esperado — prontas para executar.' },
+              { icon: MessageSquare,accent: '#06b6d4',  title: 'Chat com os Dados',   desc: 'Faça perguntas sobre sua análise. A IA responde com base nos arquivos enviados.' },
+            ].map(f => (
+              <div key={f.title} className="lp-hover group relative rounded-2xl p-6 overflow-hidden" style={{
+                background: `linear-gradient(135deg, ${f.accent}14 0%, rgba(6,11,22,0.9) 60%)`,
+                border: `1px solid ${f.accent}25`,
+              }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{
+                  background: `${f.accent}18`,
+                  border: `1px solid ${f.accent}30`,
+                }}>
+                  <f.icon className="w-5 h-5" style={{ color: f.accent }} />
                 </div>
-                <h3 className="font-semibold text-slate-800 mb-2">{f.title}</h3>
+                <h3 className="font-semibold text-white mb-2">{f.title}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
@@ -158,25 +470,40 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how" className="py-20 px-6 bg-slate-50">
-        <div className="max-w-4xl mx-auto">
+      {/* ── How it works ── */}
+      <section id="how" className="py-24 px-6 relative">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-[#0F1B2D] mb-4">Como funciona</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Como funciona</h2>
             <p className="text-slate-500">Três passos para transformar dados em decisões</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 text-center">
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {/* Connector lines (desktop) */}
+            <div className="hidden md:block absolute top-[26px] left-[calc(33.3%-16px)] w-[calc(33.3%+32px)]" style={{
+              height: '1px',
+              background: 'linear-gradient(90deg, rgba(6,182,212,0.4), rgba(6,182,212,0.8), rgba(6,182,212,0.4))',
+              boxShadow: '0 0 8px rgba(6,182,212,0.3)',
+            }} />
             {[
-              { step: '01', icon: Upload, title: 'Envie seus dados', desc: 'Upload de Excel, CSV, PDF, imagens, prints ou texto. Qualquer formato, qualquer combinação.' },
-              { step: '02', icon: Brain, title: 'IA analisa tudo', desc: 'O modelo multimodal processa todos os arquivos e gera análise estruturada em minutos.' },
-              { step: '03', icon: TrendingUp, title: 'Decida e execute', desc: 'Acesse o dashboard, diagnóstico, plano de ação e exporte o relatório em PDF.' },
-            ].map((s) => (
-              <div key={s.step}>
-                <div className="w-12 h-12 rounded-xl bg-[#1E3A5F] text-white flex items-center justify-center mx-auto mb-4">
-                  <s.icon className="w-5 h-5" />
+              { step: '01', icon: Upload,      title: 'Envie seus dados',  desc: 'Upload de Excel, CSV, PDF, imagens, prints ou texto. Qualquer formato, qualquer combinação.' },
+              { step: '02', icon: Brain,        title: 'IA analisa tudo',   desc: 'O modelo multimodal processa todos os arquivos e gera análise estruturada em minutos.' },
+              { step: '03', icon: TrendingUp,   title: 'Decida e execute',  desc: 'Acesse o dashboard, diagnóstico, plano de ação e exporte o relatório em PDF.' },
+            ].map(s => (
+              <div key={s.step} className="text-center relative z-10">
+                <div className="relative w-14 h-14 mx-auto mb-6">
+                  <div className="absolute inset-0 rounded-2xl lp-pulse-ring" style={{
+                    background: 'rgba(6,182,212,0.12)',
+                    filter: 'blur(8px)',
+                  }} />
+                  <div className="relative w-full h-full rounded-2xl flex items-center justify-center" style={{
+                    background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(59,130,246,0.08))',
+                    border: '1px solid rgba(6,182,212,0.25)',
+                  }}>
+                    <s.icon className="w-6 h-6 text-cyan-400" />
+                  </div>
                 </div>
-                <div className="text-xs font-bold text-slate-400 mb-2">PASSO {s.step}</div>
-                <h3 className="font-semibold text-slate-800 mb-2">{s.title}</h3>
+                <div className="text-xs font-bold text-cyan-600 mb-2 tracking-widest">PASSO {s.step}</div>
+                <h3 className="font-semibold text-white mb-3">{s.title}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
               </div>
             ))}
@@ -184,82 +511,111 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* AI Principles */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto bg-[#0F1B2D] rounded-2xl p-10 text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
-            <Shield className="w-3 h-3" />
-            IA Responsável
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-4">A IA usa apenas os seus dados</h2>
-          <p className="text-slate-400 mb-8 max-w-2xl mx-auto">
-            O LogiPilot AI age como um analista operacional júnior. Nunca inventa números
-            e sempre separa fatos observados, hipóteses, recomendações e limitações da análise.
-          </p>
-          <div className="grid sm:grid-cols-4 gap-4">
-            {[
-              { icon: '✅', label: 'Fatos observados', desc: 'Dados reais dos arquivos' },
-              { icon: '💡', label: 'Hipóteses', desc: 'Sinalizadas como tal' },
-              { icon: '🎯', label: 'Recomendações', desc: 'Baseadas nos dados' },
-              { icon: '⚠️', label: 'Limitações', desc: 'Transparência total' },
-            ].map((item) => (
-              <div key={item.label} className="bg-white/5 rounded-xl p-4">
-                <div className="text-2xl mb-2">{item.icon}</div>
-                <p className="text-white text-sm font-medium">{item.label}</p>
-                <p className="text-slate-500 text-xs mt-1">{item.desc}</p>
+      {/* ── AI Responsible ── */}
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative rounded-3xl p-10 md:p-14 text-center overflow-hidden" style={{
+            background: 'linear-gradient(135deg, rgba(8,14,28,0.98), rgba(12,20,42,0.98))',
+            border: '1px solid rgba(255,255,255,0.07)',
+          }}>
+            {/* Top glow line */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-px rounded-full" style={{
+              background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.55), transparent)',
+            }} />
+            {/* Background halo */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 pointer-events-none" style={{
+              background: 'radial-gradient(ellipse at 50% 0%, rgba(6,182,212,0.07) 0%, transparent 70%)',
+            }} />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full text-xs font-semibold text-cyan-400" style={{
+                background: 'rgba(6,182,212,0.08)',
+                border: '1px solid rgba(6,182,212,0.2)',
+              }}>
+                <Shield className="w-3 h-3" />
+                IA Responsável
               </div>
-            ))}
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">A IA usa apenas os seus dados</h2>
+              <p className="text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                O LogiPilot AI age como um analista operacional júnior. Ele não inventa números
+                e separa fatos observados, hipóteses, recomendações e limitações da análise.
+              </p>
+              <div className="grid sm:grid-cols-4 gap-4">
+                {[
+                  { icon: CheckCircle,   accent: '#10b981', label: 'Fatos observados', desc: 'Dados reais dos arquivos'  },
+                  { icon: Layers,        accent: '#3b82f6', label: 'Hipóteses',         desc: 'Sinalizadas como tal'     },
+                  { icon: Target,        accent: '#8b5cf6', label: 'Recomendações',     desc: 'Baseadas nos dados'       },
+                  { icon: AlertTriangle, accent: '#f59e0b', label: 'Limitações',        desc: 'Transparência total'      },
+                ].map(item => (
+                  <div key={item.label} className="rounded-2xl p-4" style={{
+                    background: `${item.accent}0f`,
+                    border: `1px solid ${item.accent}22`,
+                  }}>
+                    <item.icon className="w-5 h-5 mx-auto mb-2" style={{ color: item.accent }} />
+                    <p className="text-white text-sm font-medium mb-1">{item.label}</p>
+                    <p className="text-slate-500 text-xs">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 px-6 bg-slate-50">
+      {/* ── Pricing ── */}
+      <section id="pricing" className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-[#0F1B2D] mb-4">Planos e preços</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Planos e preços</h2>
             <p className="text-slate-500 max-w-2xl mx-auto">
               Comece grátis e escale quando precisar. Sem burocracia, sem contrato de longo prazo.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {/* Free */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-8 flex flex-col">
+            <div className="relative rounded-2xl p-8 flex flex-col" style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.07)',
+            }}>
               <div className="mb-6">
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Grátis</p>
                 <div className="flex items-end gap-1 mb-1">
-                  <span className="text-4xl font-bold text-[#0F1B2D]">R$ 0</span>
+                  <span className="text-4xl font-bold text-white">R$ 0</span>
                 </div>
-                <p className="text-sm text-slate-400">Para sempre, sem cartão</p>
+                <p className="text-sm text-slate-600">Para sempre, sem cartão</p>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
-                {[
-                  '5 análises por mês',
-                  'Excel, CSV e texto',
-                  'Resumo executivo',
-                  'Dashboard automático',
-                  '1 usuário',
-                ].map(f => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    {f}
+                {['5 análises por mês', 'Excel, CSV e texto', 'Resumo executivo', 'Dashboard automático', '1 usuário'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-slate-400">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />{f}
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+              <Link href="/register" className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:bg-white/10" style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+              }}>
                 Começar grátis
               </Link>
             </div>
 
-            {/* Pro — destaque */}
-            <div className="bg-[#1E3A5F] rounded-2xl p-8 flex flex-col relative overflow-hidden shadow-xl shadow-[#1E3A5F]/20">
+            {/* Pro */}
+            <div className="relative rounded-2xl p-8 flex flex-col overflow-hidden" style={{
+              background: 'linear-gradient(135deg, rgba(6,182,212,0.12), rgba(59,130,246,0.08))',
+              border: '1px solid rgba(6,182,212,0.28)',
+              boxShadow: '0 0 60px rgba(6,182,212,0.08), 0 0 0 1px rgba(6,182,212,0.06)',
+            }}>
+              <div className="absolute top-0 left-0 right-0 h-px" style={{
+                background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.75), transparent)',
+              }} />
               <div className="absolute top-4 right-4">
-                <span className="bg-emerald-400 text-[#0F1B2D] text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span className="text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1" style={{
+                  background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                }}>
                   <Star className="w-3 h-3 fill-current" /> Popular
                 </span>
               </div>
               <div className="mb-6">
-                <p className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-2">Pro</p>
+                <p className="text-sm font-semibold text-cyan-400 uppercase tracking-wider mb-2">Pro</p>
                 <div className="flex items-end gap-1 mb-1">
                   <span className="text-4xl font-bold text-white">R$ 97</span>
                   <span className="text-slate-400 mb-1">/mês</span>
@@ -267,95 +623,122 @@ export default function LandingPage() {
                 <p className="text-sm text-slate-400">Cobrado mensalmente</p>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
-                {[
-                  'Análises ilimitadas',
-                  'Todos os formatos (PDF, PPTX, imagens)',
-                  'Diagnóstico completo com IA',
-                  'Plano de ação com prioridades',
-                  'Chat com os dados',
-                  'Exportação em PDF',
-                  'Histórico completo',
-                  'Até 5 usuários',
-                ].map(f => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-white/90">
-                    <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    {f}
+                {['Análises ilimitadas', 'Todos os formatos (PDF, PPTX, imagens)', 'Diagnóstico completo com IA', 'Plano de ação com prioridades', 'Chat com os dados', 'Exportação em PDF', 'Histórico completo', 'Até 5 usuários'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-white/80">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />{f}
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm shadow-lg shadow-emerald-500/30">
+              <Link href="/register" className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:opacity-90" style={{
+                background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                boxShadow: '0 8px 24px rgba(6,182,212,0.25)',
+              }}>
                 Assinar Pro
               </Link>
             </div>
 
             {/* Enterprise */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-8 flex flex-col">
+            <div className="relative rounded-2xl p-8 flex flex-col" style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.07)',
+            }}>
               <div className="mb-6">
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Empresarial</p>
                 <div className="flex items-end gap-1 mb-1">
-                  <span className="text-4xl font-bold text-[#0F1B2D]">R$ 297</span>
+                  <span className="text-4xl font-bold text-white">R$ 297</span>
                   <span className="text-slate-400 mb-1">/mês</span>
                 </div>
-                <p className="text-sm text-slate-400">Para frotas e operações maiores</p>
+                <p className="text-sm text-slate-600">Para frotas e operações maiores</p>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
-                {[
-                  'Tudo do plano Pro',
-                  'Usuários ilimitados',
-                  'Gestão de motoristas',
-                  'Supervisão de equipe',
-                  'Análises por organização',
-                  'Suporte prioritário',
-                  'Onboarding dedicado',
-                ].map(f => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    {f}
+                {['Tudo do plano Pro', 'Usuários ilimitados', 'Gestão de motoristas', 'Supervisão de equipe', 'Análises por organização', 'Suporte prioritário', 'Onboarding dedicado'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-slate-400">
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />{f}
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center bg-[#1E3A5F] hover:bg-[#162d4a] text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+              <Link href="/register" className="block text-center font-semibold px-6 py-3 rounded-xl text-sm text-white transition-all hover:bg-white/10" style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+              }}>
                 Falar com vendas
               </Link>
             </div>
           </div>
-          <p className="text-center text-xs text-slate-400 mt-8">
-            Todos os planos incluem SSL, backups automáticos e conformidade com LGPD.
-            Cancele quando quiser, sem multa.
+          <p className="text-center text-xs text-slate-700 mt-8">
+            Todos os planos incluem SSL, backups automáticos e conformidade com LGPD. Cancele quando quiser.
           </p>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-6 bg-gradient-to-r from-emerald-600 to-emerald-500">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Comece sua análise agora</h2>
-          <p className="text-emerald-100 mb-8">
-            Sem configuração. Sem BI. Envie seus dados e receba diagnóstico operacional em minutos.
-          </p>
-          <Link href="/register" className="inline-flex items-center gap-2 bg-white text-emerald-700 font-bold px-8 py-3.5 rounded-xl text-base hover:bg-emerald-50 transition-colors shadow-lg">
-            Criar conta grátis
-            <ChevronRight className="w-4 h-4" />
-          </Link>
+      {/* ── CTA Final ── */}
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative rounded-3xl p-12 md:p-16 text-center overflow-hidden" style={{
+            background: 'linear-gradient(135deg, rgba(8,14,28,0.98), rgba(12,20,42,0.98))',
+            border: '1px solid rgba(255,255,255,0.07)',
+          }}>
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: 'radial-gradient(ellipse at 50% 50%, rgba(6,182,212,0.09) 0%, transparent 65%)',
+            }} />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-px" style={{
+              background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.5), transparent)',
+            }} />
+            <div className="relative z-10">
+              <h2 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
+                Transforme dados soltos em{' '}
+                <span style={{
+                  backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>
+                  decisão operacional.
+                </span>
+              </h2>
+              <p className="text-slate-400 max-w-xl mx-auto mb-10 text-lg leading-relaxed">
+                Sem configuração complexa. Sem BI. Envie seus dados e receba um diagnóstico
+                operacional completo em minutos.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 font-bold px-10 py-4 rounded-xl text-base text-white transition-all hover:opacity-90" style={{
+                  background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                  boxShadow: '0 0 48px rgba(6,182,212,0.3), 0 8px 24px rgba(0,0,0,0.4)',
+                }}>
+                  Começar análise grátis
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link href="/login" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 font-medium px-10 py-4 rounded-xl text-base text-white transition-all hover:bg-white/10" style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}>
+                  Entrar na minha conta
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 px-6 border-t border-slate-100">
+      {/* ── Footer ── */}
+      <footer className="py-8 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+            <div className="w-6 h-6 rounded flex items-center justify-center" style={{
+              background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
+            }}>
               <Zap className="w-3 h-3 text-white" />
             </div>
-            <span className="text-sm font-bold text-[#0F1B2D]">LogiPilot AI</span>
+            <span className="text-sm font-bold text-white">LogiPilot AI</span>
           </div>
-          <p className="text-xs text-slate-400">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
-          <div className="flex items-center gap-4 text-xs text-slate-400">
-            <Link href="/privacidade" className="hover:text-slate-600">Privacidade</Link>
-            <Link href="/termos" className="hover:text-slate-600">Termos</Link>
+          <p className="text-xs text-slate-700">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
+          <div className="flex items-center gap-4 text-xs text-slate-600">
+            <Link href="/privacidade" className="hover:text-slate-400 transition-colors">Privacidade</Link>
+            <Link href="/termos"      className="hover:text-slate-400 transition-colors">Termos</Link>
           </div>
         </div>
       </footer>
+
     </div>
   )
 }
