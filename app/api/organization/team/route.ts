@@ -8,11 +8,17 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: myProfile } = await supabase
+  const adminRead = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  const { data: myProfile } = await adminRead
     .from('user_profiles')
     .select('organization_id, role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!myProfile || myProfile.role === 'motorista') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -33,11 +39,17 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: myProfile } = await supabase
+  const adminRead = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  const { data: myProfile } = await adminRead
     .from('user_profiles')
     .select('organization_id, role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!myProfile || myProfile.role !== 'gestor') {
     return NextResponse.json({ error: 'Apenas gestores podem adicionar membros' }, { status: 403 })
@@ -94,11 +106,17 @@ export async function PATCH(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: myProfile } = await supabase
+  const adminRead = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  const { data: myProfile } = await adminRead
     .from('user_profiles')
     .select('organization_id, role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!myProfile || myProfile.role !== 'gestor') {
     return NextResponse.json({ error: 'Apenas gestores podem editar membros' }, { status: 403 })
@@ -134,11 +152,17 @@ export async function DELETE(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: myProfile } = await supabase
+  const adminRead = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  const { data: myProfile } = await adminRead
     .from('user_profiles')
     .select('organization_id, role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!myProfile || myProfile.role !== 'gestor') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

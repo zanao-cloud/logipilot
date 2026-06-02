@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
@@ -36,41 +37,24 @@ export async function proxy(request: NextRequest) {
     if (['/dashboard', '/analysis', '/history'].some(p => pathname.startsWith(p))) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
+    return supabaseResponse
   }
 
-  // Logged-in role-based routing — keep each role inside their own portal
-  if (user) {
-    const isLoginPage = pathname === '/login' || pathname === '/register'
-                     || pathname === '/operador/login' || pathname === '/motorista/login'
-    const isGestorArea  = ['/dashboard', '/analysis', '/history'].some(p => pathname.startsWith(p))
-    const isOperadorArea = pathname.startsWith('/operador') && pathname !== '/operador/login'
-    const isMotoristaArea = pathname.startsWith('/motorista') && pathname !== '/motorista/login'
-
-    if (isLoginPage || isGestorArea || isOperadorArea || isMotoristaArea) {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      const role = profile?.role
-      const home = role === 'motorista' ? '/motorista'
-                 : role === 'operador'  ? '/operador'
-                 : '/dashboard'
-
-      if (isLoginPage) {
-        return NextResponse.redirect(new URL(home, request.url))
-      }
-      if (role === 'motorista' && !isMotoristaArea) {
-        return NextResponse.redirect(new URL('/motorista', request.url))
-      }
-      if (role === 'operador' && !isOperadorArea) {
-        return NextResponse.redirect(new URL('/operador', request.url))
-      }
-      if (role === 'gestor' && !isGestorArea) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
+  // Logged-in. Bounce login/register to the right home for the user's role.
+  if (pathname === '/login' || pathname === '/register'
+      || pathname === '/operador/login' || pathname === '/motorista/login') {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    let role: string | undefined
+    if (serviceKey) {
+      const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } })
+      const { data: profile } = await admin
+        .from('user_profiles').select('role').eq('id', user.id).maybeSingle()
+      role = profile?.role
     }
+    const home = role === 'motorista' ? '/motorista'
+               : role === 'operador'  ? '/operador'
+               : '/dashboard'
+    return NextResponse.redirect(new URL(home, request.url))
   }
 
   return supabaseResponse

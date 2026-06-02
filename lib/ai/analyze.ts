@@ -7,17 +7,23 @@ function getGroq() {
   return new Groq({ apiKey })
 }
 
+// Multimodal model — accepts both text and images
+const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
+// Text-only fallback for when no images are present (faster, cheaper)
+const TEXT_MODEL = 'llama-3.1-8b-instant'
+
 const SYSTEM_PROMPT = `Você é um analista operacional especializado em diagnóstico de dados empresariais.
 
-Sua função é analisar dados fornecidos pelo usuário (planilhas, relatórios, CSVs, PDFs) e gerar uma análise estruturada.
+Sua função é analisar dados fornecidos pelo usuário (planilhas, relatórios, CSVs, PDFs, imagens, prints de tela) e gerar uma análise estruturada.
 
 REGRAS FUNDAMENTAIS:
 1. Use APENAS os dados fornecidos. NUNCA invente números, métricas ou informações não presentes nos dados.
-2. Sempre separe claramente: fatos observados, hipóteses, recomendações e limitações.
-3. Se os dados forem insuficientes para uma análise, indique explicitamente.
-4. Seja preciso e objetivo. Evite linguagem vaga.
-5. Para dashboards, extraia apenas dados que realmente existem nos arquivos.
-6. Retorne APENAS o JSON válido pedido, sem texto adicional antes ou depois.`
+2. Para imagens: leia atentamente todo o conteúdo visual (números, gráficos, tabelas, textos) e baseie sua análise no que efetivamente está visível.
+3. Sempre separe claramente: fatos observados, hipóteses, recomendações e limitações.
+4. Se os dados forem insuficientes para uma análise, indique explicitamente.
+5. Seja preciso e objetivo. Evite linguagem vaga.
+6. Para dashboards, extraia apenas dados que realmente existem nos arquivos.
+7. Retorne APENAS o JSON válido pedido, sem texto adicional antes ou depois.`
 
 const RESULT_SCHEMA = `Retorne SOMENTE este JSON válido (sem markdown, sem blocos de código):
 {
@@ -74,34 +80,80 @@ interface FileInput {
   imageMediaType?: string
 }
 
+type GroqContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } }
+
 export async function analyzeData(files: FileInput[], userContext?: string): Promise<AnalysisResult> {
   const groq = getGroq()
+  const imageFiles = files.filter(f => f.isImage && f.imageBase64)
+  const textFiles  = files.filter(f => !f.isImage)
+  const hasImages  = imageFiles.length > 0
 
-  const parts: string[] = [
+  const textParts: string[] = [
     `${SYSTEM_PROMPT}\n\n${RESULT_SCHEMA}`,
     userContext ? `Contexto fornecido pelo usuário: ${userContext}` : '',
-    'Analise os seguintes dados:',
   ].filter(Boolean)
 
-  for (const file of files) {
-    parts.push(`\n--- Arquivo: ${file.name} (${file.type}) ---\n${file.content}`)
+  if (hasImages) {
+    textParts.push(`\nForam enviadas ${imageFiles.length} imagem(ns) para análise visual:`)
+    imageFiles.forEach(img => textParts.push(`- ${img.name} (${img.type})`))
   }
 
+  if (textFiles.length > 0) {
+    textParts.push('\nDados em texto/planilha enviados:')
+    for (const file of textFiles) {
+      textParts.push(`\n--- Arquivo: ${file.name} (${file.type}) ---\n${file.content}`)
+    }
+  }
+
+  textParts.push('\nAnalise tudo (imagens + dados acima) e retorne SOMENTE o JSON pedido no schema.')
+
+  if (hasImages) {
+    // Multimodal request — text + image parts
+    const content: GroqContentPart[] = [{ type: 'text', text: textParts.join('\n') }]
+    for (const img of imageFiles) {
+      content.push({
+        type: 'image_url',
+        image_url: { url: `data:${img.imageMediaType || 'image/jpeg'};base64,${img.imageBase64}` },
+      })
+    }
+
+    const completion = await groq.chat.completions.create({
+      model: VISION_MODEL,
+      messages: [{ role: 'user', content: content as never }],
+      max_tokens: 8192,
+      temperature: 0.1,
+    })
+
+    return parseAIResult(completion.choices[0]?.message?.content ?? '')
+  }
+
+  // Text-only path — keep the lighter/faster model and json_object enforcement
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.1-8b-instant',
-    messages: [{ role: 'user', content: parts.join('\n') }],
+    model: TEXT_MODEL,
+    messages: [{ role: 'user', content: textParts.join('\n') }],
     max_tokens: 8192,
     temperature: 0.1,
     response_format: { type: 'json_object' },
   })
 
-  const text = completion.choices[0]?.message?.content ?? ''
+  return parseAIResult(completion.choices[0]?.message?.content ?? '')
+}
+
+function parseAIResult(text: string): AnalysisResult {
   if (!text) throw new Error('IA não retornou resposta. Tente novamente.')
 
+  // Strip code fences in case the vision model wraps the JSON
+  const cleaned = text
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*$/g, '')
+    .trim()
+
   try {
-    return JSON.parse(text) as AnalysisResult
+    return JSON.parse(cleaned) as AnalysisResult
   } catch {
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
     if (!jsonMatch) throw new Error('IA não retornou JSON válido. Tente novamente.')
     return JSON.parse(jsonMatch[0]) as AnalysisResult
   }
@@ -126,7 +178,7 @@ REGRAS:
 - Separe fatos de hipóteses quando relevante`
 
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.1-8b-instant',
+    model: TEXT_MODEL,
     messages: [
       { role: 'system', content: systemContext },
       ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),

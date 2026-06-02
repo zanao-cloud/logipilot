@@ -7,7 +7,15 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
+  // Read via admin client to bypass RLS — we've already validated the user
+  // through Supabase auth above, so it's safe to read their own profile row.
+  const admin = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  const { data: profile } = await admin
     .from('user_profiles')
     .select('*, organizations(id, name)')
     .eq('id', user.id)
@@ -15,38 +23,25 @@ export async function GET() {
 
   if (profile) return NextResponse.json(profile)
 
-  // Auto-repair: user is authenticated but has no profile row.
-  // Create a gestor profile + org so they're not stuck. This recovers
-  // from signups where the profile creation step failed or was skipped.
-  const admin = createAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-
+  // No profile yet — create a gestor profile + org so the user can start using
+  // the tool. This is idempotent because we just checked there's no profile.
   const fullName = (user.user_metadata?.full_name as string)
     || user.email?.split('@')[0]
-    || 'Gestor'
+    || 'Usuário'
 
-  const { data: org, error: orgError } = await admin
+  const { data: org } = await admin
     .from('organizations')
     .insert({ name: `${fullName} Transportes`, owner_id: user.id })
     .select()
     .single()
 
-  if (orgError || !org) {
-    return NextResponse.json(null)
-  }
+  if (!org) return NextResponse.json(null)
 
-  const { error: profileError } = await admin
+  await admin
     .from('user_profiles')
     .insert({ id: user.id, organization_id: org.id, role: 'gestor', full_name: fullName })
 
-  if (profileError) {
-    return NextResponse.json(null)
-  }
-
-  const { data: created } = await supabase
+  const { data: created } = await admin
     .from('user_profiles')
     .select('*, organizations(id, name)')
     .eq('id', user.id)
