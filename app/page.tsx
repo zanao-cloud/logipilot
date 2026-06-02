@@ -172,16 +172,16 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6 tracking-tight">
-            Você não está enviando arquivos.<br className="hidden sm:block" />
+            Diagnóstico operacional completo,<br className="hidden sm:block" />
             <span style={{
               backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa, #818cf8)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>
-              {' '}Está ativando um analista
+              gerado por IA
             </span>{' '}
-            <span className="text-white">operacional com IA.</span>
+            <span className="text-white">em minutos.</span>
           </h1>
 
           <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
