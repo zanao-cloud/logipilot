@@ -27,6 +27,57 @@ const PORTAL = {
 
 const emptyForm = { full_name: '', email: '', password: '', phone: '', vehicle_plate: '' }
 
+// Mercosul plate format: LLLNLNN (3 letras + 1 número + 1 letra + 2 números)
+function formatMercosulPlate(raw: string): string {
+  const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  let result = ''
+  for (let i = 0; i < cleaned.length && i < 7; i++) {
+    const ch = cleaned[i]
+    const expectsLetter = i < 3 || i === 4
+    if (expectsLetter && /[A-Z]/.test(ch)) result += ch
+    else if (!expectsLetter && /[0-9]/.test(ch)) result += ch
+  }
+  return result
+}
+
+const isPlateValid = (plate: string) => /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(plate)
+
+function PlateInput({
+  value, onChange, required = false,
+}: { value: string; onChange: (v: string) => void; required?: boolean }) {
+  const valid = isPlateValid(value)
+  const showError = value.length === 7 && !valid
+  return (
+    <div>
+      <label className="text-sm font-medium text-slate-300 block mb-1.5">
+        Placa do veículo {required ? '' : '(opcional)'}
+      </label>
+      <input
+        type="text"
+        inputMode="text"
+        autoCapitalize="characters"
+        autoComplete="off"
+        spellCheck={false}
+        maxLength={7}
+        placeholder="AAA0A00"
+        value={value}
+        onChange={e => onChange(formatMercosulPlate(e.target.value))}
+        required={required}
+        className="w-full px-3.5 py-2.5 rounded-lg text-sm text-white font-mono tracking-widest uppercase placeholder:text-slate-600 placeholder:tracking-widest outline-none transition-all"
+        style={{
+          background: 'rgba(255,255,255,0.06)',
+          border: `1px solid ${showError ? 'rgba(239,68,68,0.5)' : value && valid ? 'rgba(56,189,248,0.45)' : 'rgba(255,255,255,0.1)'}`,
+        }}
+      />
+      <p className={`text-[11px] mt-1 ${showError ? 'text-red-400' : 'text-slate-500'}`}>
+        {showError
+          ? 'Formato inválido. Use o padrão Mercosul: 3 letras, 1 número, 1 letra, 2 números (ex: ABC1D23).'
+          : 'Padrão Mercosul: 3 letras + 1 número + 1 letra + 2 números (ex: ABC1D23).'}
+      </p>
+    </div>
+  )
+}
+
 function getInitials(name: string) {
   const parts = (name || '').trim().split(' ')
   return parts.length >= 2
@@ -112,8 +163,13 @@ export default function AcessosPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    setCreateError(''); setSaving(true)
+    setCreateError('')
     const role = tab === 'colaborador' ? 'operador' : 'motorista'
+    if (role === 'motorista' && form.vehicle_plate && !isPlateValid(form.vehicle_plate)) {
+      setCreateError('Placa inválida. Use o padrão Mercosul (ex: ABC1D23) ou deixe em branco.')
+      return
+    }
+    setSaving(true)
     const res  = await fetch('/api/organization/team', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -135,7 +191,12 @@ export default function AcessosPage() {
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault()
     if (!editMember) return
-    setEditError(''); setEditSaving(true)
+    setEditError('')
+    if (editMember.role === 'motorista' && editForm.vehicle_plate && !isPlateValid(editForm.vehicle_plate)) {
+      setEditError('Placa inválida. Use o padrão Mercosul (ex: ABC1D23) ou deixe em branco.')
+      return
+    }
+    setEditSaving(true)
     const res  = await fetch('/api/organization/team', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -384,8 +445,10 @@ export default function AcessosPage() {
                 <DarkInput label="Telefone (opcional)" placeholder="(11) 99999-9999" value={form.phone}
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
                 {!isColaborador && (
-                  <DarkInput label="Placa do veículo (opcional)" placeholder="ABC-1234" value={form.vehicle_plate}
-                    onChange={e => setForm(f => ({ ...f, vehicle_plate: e.target.value }))} />
+                  <PlateInput
+                    value={form.vehicle_plate}
+                    onChange={v => setForm(f => ({ ...f, vehicle_plate: v }))}
+                  />
                 )}
                 {createError && (
                   <p className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-3 py-2 rounded-xl">{createError}</p>
@@ -417,8 +480,10 @@ export default function AcessosPage() {
                 <DarkInput label="Telefone" placeholder="(11) 99999-9999" value={editForm.phone}
                   onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
                 {editMember.role === 'motorista' && (
-                  <DarkInput label="Placa do veículo" placeholder="ABC-1234" value={editForm.vehicle_plate}
-                    onChange={e => setEditForm(f => ({ ...f, vehicle_plate: e.target.value }))} />
+                  <PlateInput
+                    value={editForm.vehicle_plate}
+                    onChange={v => setEditForm(f => ({ ...f, vehicle_plate: v }))}
+                  />
                 )}
                 {editError && (
                   <p className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-3 py-2 rounded-xl">{editError}</p>
