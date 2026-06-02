@@ -7,8 +7,18 @@ import {
   ScrollText, LayoutDashboard, BotMessageSquare, CloudUpload,
   ClipboardList, TrendingUp, Target, Star, Activity, AlertTriangle,
   Layers, Sparkles, FileSpreadsheet, Table2, FileText, Presentation,
-  Image, ScanLine, Type, BarChart2,
+  Image, ScanLine, Type, BarChart2, MessageCircle, Mail,
 } from 'lucide-react'
+
+function InstagramIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
 
 /* ─── Sub-components ─── */
 
@@ -127,39 +137,98 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
+      <section className="relative flex flex-col items-center px-6 pt-28 pb-24 overflow-hidden">
         {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full" style={{
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full" style={{
             background: 'radial-gradient(circle, rgba(14,165,233,0.07) 0%, rgba(56,189,248,0.03) 45%, transparent 70%)',
           }} />
           <div className="absolute top-1/4 left-1/5 w-80 h-80 rounded-full" style={{
-            background: 'radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%)',
             filter: 'blur(60px)',
           }} />
-          <div className="absolute bottom-1/4 right-1/5 w-72 h-72 rounded-full" style={{
-            background: 'radial-gradient(circle, rgba(16,185,129,0.035) 0%, transparent 70%)',
+          <div className="absolute bottom-1/3 right-1/5 w-72 h-72 rounded-full" style={{
+            background: 'radial-gradient(circle, rgba(16,185,129,0.04) 0%, transparent 70%)',
             filter: 'blur(60px)',
           }} />
-          {/* Subtle grid */}
           <div className="absolute inset-0" style={{
             backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
             backgroundSize: '64px 64px',
-            maskImage: 'radial-gradient(ellipse at 50% 50%, black 30%, transparent 75%)',
+            maskImage: 'radial-gradient(ellipse at 50% 40%, black 20%, transparent 70%)',
           }} />
         </div>
 
-        {/* Orb + floating cards */}
-        <div className="relative z-10 mb-14">
+        {/* ── Headline FIRST ── */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center mb-20">
+          <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full text-xs font-semibold text-cyan-400" style={{
+            background: 'rgba(6,182,212,0.08)',
+            border: '1px solid rgba(6,182,212,0.2)',
+          }}>
+            <Sparkles className="w-3 h-3" />
+            IA Multimodal para Análise Operacional
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6 tracking-tight">
+            Você não está enviando arquivos.<br className="hidden sm:block" />
+            <span style={{
+              backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa, #818cf8)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              {' '}Está ativando um analista
+            </span>{' '}
+            <span className="text-white">operacional com IA.</span>
+          </h1>
+
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            O LogiPilot AI transforma planilhas, PDFs, prints, relatórios e dados soltos em
+            diagnóstico, indicadores, gargalos, oportunidades e plano de ação — em minutos.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all hover:opacity-90" style={{
+              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+              boxShadow: '0 0 50px rgba(6,182,212,0.35), 0 8px 24px rgba(0,0,0,0.4)',
+            }}>
+              Analisar meus dados agora
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <a href="#how" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-medium px-8 py-4 rounded-xl text-base transition-all hover:bg-white/10" style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}>
+              Ver como funciona
+            </a>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            {[
+              'Sem necessidade de BI',
+              'Excel, PDF, imagens e relatórios',
+              'Resultado em minutos',
+              'IA baseada nos seus dados',
+            ].map(badge => (
+              <div key={badge} className="flex items-center gap-1.5 text-xs text-slate-400 px-3 py-1.5 rounded-full" style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}>
+                <CheckCircle className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                {badge}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Orb + floating cards BELOW headline ── */}
+        <div className="relative z-10">
           <DataOrb />
 
-          {/* Score card — top-left */}
           <HoloCard className="hidden md:block -top-6 -left-40" animClass="lp-card-1">
             <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Score Operacional</p>
             <p className="text-2xl font-bold text-amber-400 leading-none">74<span className="text-sm text-slate-500 font-normal">/100</span></p>
           </HoloCard>
 
-          {/* Files card — top-right */}
           <HoloCard className="hidden md:block top-6 -right-44" animClass="lp-card-2">
             <div className="flex items-center gap-1.5 mb-2">
               <Activity className="w-3 h-3 text-cyan-400 lp-glow" />
@@ -175,7 +244,6 @@ export default function LandingPage() {
             </div>
           </HoloCard>
 
-          {/* Gargalos card — bottom-left */}
           <HoloCard className="hidden md:block -bottom-4 -left-44" animClass="lp-card-3">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
@@ -184,7 +252,6 @@ export default function LandingPage() {
             <p className="text-[10px] text-slate-500 mt-1 pl-5">Setor de logística</p>
           </HoloCard>
 
-          {/* Oportunidades card — bottom-right */}
           <HoloCard className="hidden md:block bottom-2 -right-36" animClass="lp-card-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
@@ -195,77 +262,24 @@ export default function LandingPage() {
             </div>
           </HoloCard>
         </div>
-
-        {/* Headline */}
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full text-xs font-semibold text-cyan-400" style={{
-            background: 'rgba(6,182,212,0.08)',
-            border: '1px solid rgba(6,182,212,0.2)',
-          }}>
-            <Sparkles className="w-3 h-3" />
-            IA Multimodal para Análise Operacional
-          </div>
-
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 tracking-tight">
-            Você não está enviando arquivos.<br className="hidden sm:block" />
-            <span style={{
-              backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa, #818cf8)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>
-              {' '}Está ativando um analista
-            </span>{' '}
-            <span className="text-white">operacional com IA.</span>
-          </h1>
-
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            O LogiPilot AI transforma planilhas, PDFs, prints, relatórios e dados soltos em
-            diagnóstico, indicadores, gargalos, oportunidades e plano de ação — em minutos.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-semibold px-8 py-4 rounded-xl text-base transition-all hover:opacity-90" style={{
-              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-              boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 24px rgba(0,0,0,0.4)',
-            }}>
-              Analisar meus dados agora
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a href="#how" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-medium px-8 py-4 rounded-xl text-base transition-all hover:bg-white/10" style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}>
-              Ver como funciona
-            </a>
-          </div>
-
-          {/* Trust badges */}
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            {[
-              'Sem necessidade de BI',
-              'Multimodal: Excel, PDF, imagens e relatórios',
-              'Resultado em minutos',
-              'IA baseada somente nos seus dados',
-            ].map(badge => (
-              <div key={badge} className="flex items-center gap-1.5 text-xs text-slate-500 px-3 py-1.5 rounded-full" style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0" />
-                {badge}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Scroll line */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0 opacity-20">
-          <div className="w-px h-14 lp-glow" style={{
-            background: 'linear-gradient(to bottom, transparent, rgba(56,189,248,0.8))',
-          }} />
-        </div>
       </section>
+
+      {/* ── Stats strip ── */}
+      <div className="py-10 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { value: '8+', label: 'Formatos suportados',   color: '#22d3ee' },
+            { value: '< 3min', label: 'Análise completa',  color: '#60a5fa' },
+            { value: '6',  label: 'Módulos de diagnóstico', color: '#a78bfa' },
+            { value: '100%', label: 'Baseado nos seus dados', color: '#34d399' },
+          ].map(s => (
+            <div key={s.label}>
+              <p className="text-3xl font-bold mb-1" style={{ color: s.color }}>{s.value}</p>
+              <p className="text-xs text-slate-500">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ── Dashboard 3D Mockup ── */}
       <section className="py-24 px-6 relative overflow-hidden">
@@ -388,11 +402,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── Formats ── */}
-      <section id="formats" className="py-20 px-6">
+      <section id="formats" className="py-20 px-6" style={{ background: 'linear-gradient(180deg, #020408, #06101e, #020408)' }}>
         <div className="max-w-5xl mx-auto">
-          <p className="text-center text-xs font-semibold text-slate-600 uppercase tracking-widest mb-12">
-            Aceita qualquer formato de dados
-          </p>
+          <div className="text-center mb-12">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#22d3ee' }}>Compatibilidade</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">Aceita qualquer formato de dados</h2>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {[
               { Icon: FileSpreadsheet, label: 'Excel / XLSX',  color: '#34d399', glow: 'rgba(52,211,153,0.08)'  },
@@ -418,16 +433,18 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ── */}
-      <section id="features" className="py-24 px-6 relative">
+      <section id="features" className="py-24 px-6 relative" style={{ background: 'linear-gradient(180deg, #020408, #080e1e, #020408)' }}>
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.4), rgba(14,165,233,0.4), transparent)' }} />
         <div className="absolute inset-0 pointer-events-none" style={{
-          background: 'radial-gradient(ellipse at 50% 90%, rgba(99,102,241,0.04) 0%, transparent 55%)',
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.04) 0%, transparent 60%)',
         }} />
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#818cf8' }}>Funcionalidades</p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
               Tudo que você precisa para{' '}
               <span style={{
-                backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa)',
+                backgroundImage: 'linear-gradient(90deg, #22d3ee, #60a5fa, #818cf8)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -435,7 +452,7 @@ export default function LandingPage() {
                 decisões operacionais
               </span>
             </h2>
-            <p className="text-slate-500 max-w-2xl mx-auto">
+            <p className="text-slate-400 max-w-2xl mx-auto text-lg">
               O LogiPilot AI atua como um analista operacional júnior — separando fatos,
               hipóteses e recomendações com base somente nos seus dados.
             </p>
@@ -469,10 +486,12 @@ export default function LandingPage() {
 
       {/* ── How it works ── */}
       <section id="how" className="py-24 px-6 relative">
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.5), transparent)' }} />
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Como funciona</h2>
-            <p className="text-slate-500">Três passos para transformar dados em decisões</p>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#22d3ee' }}>Processo</p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Como funciona</h2>
+            <p className="text-slate-400 text-lg">Três passos para transformar dados em decisões</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 relative">
             {/* Connector lines (desktop) */}
@@ -559,11 +578,13 @@ export default function LandingPage() {
       </section>
 
       {/* ── Pricing ── */}
-      <section id="pricing" className="py-24 px-6">
+      <section id="pricing" className="py-24 px-6" style={{ background: 'linear-gradient(180deg, #020408, #07101e, #020408)' }}>
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.3), rgba(59,130,246,0.4), transparent)' }} />
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Planos e preços</h2>
-            <p className="text-slate-500 max-w-2xl mx-auto">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#22d3ee' }}>Preços</p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Planos e preços</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto text-lg">
               Comece grátis e escale quando precisar. Sem burocracia, sem contrato de longo prazo.
             </p>
           </div>
@@ -717,16 +738,73 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Contact strip ── */}
+      <section className="py-16 px-6" style={{ background: 'linear-gradient(135deg, #060d1a, #0a1628)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#22d3ee' }}>Atendimento</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">Fale com a gente</h2>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <a href="https://wa.me/5511939369341" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-4 rounded-2xl px-6 py-5 transition-all group"
+              style={{ background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.2)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.14)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.08)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(37,211,102,0.15)', border: '1px solid rgba(37,211,102,0.25)' }}>
+                <MessageCircle className="w-6 h-6" style={{ color: '#25d366' }} />
+              </div>
+              <div>
+                <p className="font-semibold text-white text-sm">WhatsApp</p>
+                <p className="text-xs text-slate-400 mt-0.5">(11) 93936-9341</p>
+              </div>
+            </a>
+
+            <a href="https://instagram.com/logipilotai" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-4 rounded-2xl px-6 py-5 transition-all group"
+              style={{ background: 'rgba(225,48,108,0.08)', border: '1px solid rgba(225,48,108,0.2)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(225,48,108,0.14)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(225,48,108,0.08)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(225,48,108,0.15)', border: '1px solid rgba(225,48,108,0.25)' }}>
+                <InstagramIcon className="w-6 h-6" style={{ color: '#e1306c' }} />
+              </div>
+              <div>
+                <p className="font-semibold text-white text-sm">Instagram</p>
+                <p className="text-xs text-slate-400 mt-0.5">@logipilotai</p>
+              </div>
+            </a>
+
+            <a href="mailto:logipilot@gmail.com"
+              className="flex items-center gap-4 rounded-2xl px-6 py-5 transition-all group"
+              style={{ background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,165,233,0.14)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(14,165,233,0.08)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.25)' }}>
+                <Mail className="w-6 h-6 text-sky-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-white text-sm">E-mail</p>
+                <p className="text-xs text-slate-400 mt-0.5">logipilot@gmail.com</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ── */}
       <footer className="py-8 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="bg-white/8 rounded-lg px-2.5 py-1">
-            <img src="/logo.png" alt="Logipilot AI" className="h-5 w-auto" />
+          <div className="bg-white/10 rounded-lg px-3 py-1.5">
+            <img src="/logo.png" alt="Logipilot AI" className="h-6 w-auto" />
           </div>
-          <p className="text-xs text-slate-700">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
-          <div className="flex items-center gap-4 text-xs text-slate-600">
-            <Link href="/privacidade" className="hover:text-slate-400 transition-colors">Privacidade</Link>
-            <Link href="/termos"      className="hover:text-slate-400 transition-colors">Termos</Link>
+          <p className="text-xs text-slate-600">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <Link href="/privacidade" className="hover:text-slate-300 transition-colors">Privacidade</Link>
+            <Link href="/termos"      className="hover:text-slate-300 transition-colors">Termos</Link>
+            <a href="https://wa.me/5511939369341" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors">Suporte</a>
           </div>
         </div>
       </footer>

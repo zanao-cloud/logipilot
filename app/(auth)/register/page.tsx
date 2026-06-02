@@ -16,11 +16,29 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+  const [emailTaken, setEmailTaken] = useState(false)
+  const [checkingEmail, setCheckingEmail] = useState(false)
+
+  async function checkEmail(value: string) {
+    if (!value || !value.includes('@')) return
+    setCheckingEmail(true)
+    try {
+      const res = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: value }),
+      })
+      const { exists } = await res.json()
+      setEmailTaken(exists)
+    } catch { /* ignore */ }
+    setCheckingEmail(false)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     if (password.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return }
+    if (emailTaken) { setError('Este e-mail já está cadastrado.'); return }
     setLoading(true)
 
     const res = await fetch('/api/auth/signup', {
@@ -93,14 +111,26 @@ export default function RegisterPage() {
             value={company}
             onChange={(e) => setCompany(e.target.value)}
           />
-          <Input
-            label="E-mail"
-            type="email"
-            placeholder="seu@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <div>
+            <Input
+              label="E-mail"
+              type="email"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setEmailTaken(false) }}
+              onBlur={(e) => checkEmail(e.target.value)}
+              required
+            />
+            {emailTaken && (
+              <p className="text-xs text-red-600 mt-1 ml-0.5">
+                Este e-mail já está cadastrado.{' '}
+                <a href="/login" className="underline font-medium">Entrar</a>
+              </p>
+            )}
+            {checkingEmail && (
+              <p className="text-xs text-slate-400 mt-1 ml-0.5">Verificando...</p>
+            )}
+          </div>
           <Input
             label="Senha"
             type="password"
