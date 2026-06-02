@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   PlusCircle, FileText, Clock, CheckCircle, AlertCircle,
   TrendingUp, BarChart3, Brain, Users, Truck, Shield, ArrowRight,
+  KeyRound, UserPlus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -89,40 +90,73 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Team (gestors only) */}
-      {isGestor && team.length > 0 && (
+      {/* Team management (gestors only — always visible so access creation is discoverable) */}
+      {isGestor && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-white">Equipe</h2>
+            <div>
+              <h2 className="text-base font-semibold text-white">Equipe e acessos</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Crie logins de colaboradores e motoristas da sua empresa</p>
+            </div>
             <Link href="/dashboard/acessos"
-              className="flex items-center gap-1 text-sm text-sky-400 hover:text-sky-300 font-medium transition-colors">
-              Gerenciar <ArrowRight className="w-3.5 h-3.5" />
+              className="flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl transition-all"
+              style={{ background: 'linear-gradient(135deg, #1d4ed8, #0ea5e9)', color: 'white', boxShadow: '0 0 18px rgba(14,165,233,0.35)' }}>
+              <UserPlus className="w-4 h-4" />
+              Criar acesso
             </Link>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Gestores',   value: gestores,   Icon: Shield, color: '#3b82f6', href: '/dashboard/acessos' },
-              { label: 'Operadores', value: operadores, Icon: Users,  color: '#f59e0b', href: '/dashboard/acessos' },
-              { label: 'Motoristas', value: motoristas, Icon: Truck,  color: '#38bdf8', href: '/dashboard/motoristas' },
-            ].map(item => (
-              <Link key={item.label} href={item.href}>
-                <div className="rounded-2xl p-5 flex items-center gap-3 transition-all cursor-pointer"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${item.color}14`, border: `1px solid ${item.color}28`, boxShadow: `0 0 12px ${item.color}20` }}>
-                    <item.Icon className="w-4 h-4" style={{ color: item.color }} />
+
+          {team.length === 0 ? (
+            // Empty state — prominent CTA for first-time gestors
+            <div className="rounded-2xl p-6 relative overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, rgba(29,78,216,0.12), rgba(14,165,233,0.06))', border: '1px solid rgba(56,189,248,0.18)' }}>
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: 'radial-gradient(ellipse at 80% 50%, rgba(14,165,233,0.12) 0%, transparent 65%)' }} />
+              <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #1d4ed8, #0ea5e9)', boxShadow: '0 0 24px rgba(14,165,233,0.4)' }}>
+                    <KeyRound className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-xl font-bold text-white">{item.value}</p>
-                    <p className="text-xs text-slate-500">{item.label}</p>
+                    <p className="text-white font-semibold">Você ainda não tem colaboradores ou motoristas cadastrados</p>
+                    <p className="text-sm text-slate-400 mt-0.5">Crie acessos para sua equipe usar os portais Operador e Motorista</p>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+                <Link href="/dashboard/acessos">
+                  <Button className="gap-2 whitespace-nowrap">
+                    <UserPlus className="w-4 h-4" />
+                    Criar primeiro acesso
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Gestores',   value: gestores,   Icon: Shield, color: '#3b82f6', href: '/dashboard/acessos' },
+                { label: 'Operadores', value: operadores, Icon: Users,  color: '#f59e0b', href: '/dashboard/acessos' },
+                { label: 'Motoristas', value: motoristas, Icon: Truck,  color: '#38bdf8', href: '/dashboard/motoristas' },
+              ].map(item => (
+                <Link key={item.label} href={item.href}>
+                  <div className="rounded-2xl p-5 flex items-center gap-3 transition-all cursor-pointer"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: `${item.color}14`, border: `1px solid ${item.color}28`, boxShadow: `0 0 12px ${item.color}20` }}>
+                      <item.Icon className="w-4 h-4" style={{ color: item.color }} />
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-white">{item.value}</p>
+                      <p className="text-xs text-slate-500">{item.label}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -141,7 +141,12 @@ export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks
             )
           }
 
-          const visible = group.items.filter(i => !i.gestorOnly || profile?.role === 'gestor')
+          // Hide gestor-only groups entirely when we know the user is not gestor.
+          // If profile is still null (e.g. fetch failed but loading=false), keep
+          // the gestor group visible — the worst case is showing a link the
+          // server will then forbid, vs hiding it from a real gestor.
+          const isGestor = !profile || profile.role === 'gestor'
+          const visible = group.items.filter(i => !i.gestorOnly || isGestor)
           if (!visible.length) return null
           return (
             <div key={gi}>
