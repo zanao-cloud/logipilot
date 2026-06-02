@@ -116,7 +116,7 @@ export default function LandingPage() {
           <img
             src="/logo.png"
             alt="Logipilot AI"
-            className="h-11 w-auto"
+            className="h-16 w-auto"
             style={{ filter: 'brightness(0) invert(1)' }}
           />
           <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400">
@@ -780,7 +780,7 @@ export default function LandingPage() {
             <img
               src="/logo.png"
               alt="Logipilot AI"
-              className="h-9 w-auto"
+              className="h-14 w-auto"
               style={{ filter: 'brightness(0) invert(1)' }}
             />
             <p className="text-xs text-slate-600 text-center">© 2025 LogiPilot AI. Central inteligente de análise operacional multimodal.</p>
