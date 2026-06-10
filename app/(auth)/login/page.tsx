@@ -24,25 +24,15 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    let { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       const msg = error.message.toLowerCase()
-      if (msg.includes('not confirmed')) {
-        const res = await fetch('/api/auth/confirm-existing', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        })
-        if (res.ok) {
-          const retry = await supabase.auth.signInWithPassword({ email, password })
-          data = retry.data
-          error = retry.error
-        }
+      if (msg.includes('not confirmed') || msg.includes('email not confirmed')) {
+        setError('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada ou reenvie o link.')
+        setLoading(false)
+        return
       }
-    }
-
-    if (error) {
       setError('E-mail ou senha incorretos.')
       setLoading(false)
       return
@@ -136,8 +126,24 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-                {error}
+              <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg space-y-2">
+                <p>{error}</p>
+                {error.toLowerCase().includes('confirme') && email && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await fetch('/api/auth/resend-confirmation', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email }),
+                      })
+                      if (res.ok) setError('E-mail de confirmação reenviado. Verifique sua caixa.')
+                    }}
+                    className="text-xs underline font-medium hover:opacity-80"
+                  >
+                    Reenviar e-mail de confirmação
+                  </button>
+                )}
               </div>
             )}
 

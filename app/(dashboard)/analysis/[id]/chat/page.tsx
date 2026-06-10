@@ -1,26 +1,47 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Send, Bot, User, Loader2 } from 'lucide-react'
+import { Send, Bot, User, Loader2, Download, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
 import type { ChatMessage } from '@/types'
+import type { ChatCitation } from '@/lib/ai/analyze'
 import ReactMarkdown from 'react-markdown'
+import { ChatMessageCitations } from '@/components/analysis/chat-message-citations'
+import { useToast } from '@/components/ui/toast'
+
+type ChatMessageWithCitations = ChatMessage & { citations?: ChatCitation[] }
+
+const SUGGESTED_QUESTIONS = [
+  'Quais são os principais problemas identificados?',
+  'Qual é o item mais urgente do plano de ação?',
+  'Quais indicadores estão abaixo do esperado?',
+  'Que oportunidades existem para melhorar a eficiência?',
+  'Há inconsistências graves nos dados?',
+  'Resuma o diagnóstico em 3 pontos.',
+]
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const [analysisId, setAnalysisId] = useState<string>('')
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessageWithCitations[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     params.then(({ id }) => {
       setAnalysisId(id)
       fetch(`/api/analyses/${id}/chat`)
         .then(r => r.json())
-        .then(data => { setMessages(data || []); setLoading(false) })
+        .then((data: Array<ChatMessage & { metadata?: { citations?: ChatCitation[] } }>) => {
+          setMessages((data || []).map(m => ({
+            ...m,
+            citations: m.metadata?.citations,
+          })))
+          setLoading(false)
+        })
         .catch(() => setLoading(false))
     })
   }, [params])
@@ -29,20 +50,14 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const suggestedQuestions = [
-    'Quais são os principais problemas identificados?',
-    'Qual é o item mais urgente do plano de ação?',
-    'Quais indicadores estão abaixo do esperado?',
-    'Que oportunidades existem para melhorar a eficiência?',
-  ]
-
-  function createOptimisticMessage(role: 'user' | 'assistant', content: string): ChatMessage {
+  function createOptimisticMessage(role: 'user' | 'assistant', content: string, citations?: ChatCitation[]): ChatMessageWithCitations {
     return {
       id: `optimistic-${role}-${crypto.randomUUID()}`,
       analysis_id: analysisId,
       role,
       content,
       created_at: new Date().toISOString(),
+      citations,
     }
   }
 
@@ -62,13 +77,45 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       })
 
       const data = await res.json()
-      const assistantMsg = createOptimisticMessage('assistant', data.reply)
+      const assistantMsg = createOptimisticMessage('assistant', data.reply, data.citations)
       setMessages(prev => [...prev, assistantMsg])
     } catch {
       setMessages(prev => [...prev, createOptimisticMessage('assistant', 'Erro ao processar sua mensagem. Tente novamente.')])
     } finally {
       setSending(false)
     }
+  }
+
+  function exportConversation() {
+    if (messages.length === 0) {
+      toast({ variant: 'warning', title: 'Sem mensagens para exportar' })
+      return
+    }
+    const lines = ['# Conversa com a IA — LogiPilot', '']
+    for (const m of messages) {
+      const who = m.role === 'user' ? '**Você**' : '**IA**'
+      const ts = new Date(m.created_at).toLocaleString()
+      lines.push(`### ${who} — ${ts}`)
+      lines.push('')
+      lines.push(m.content)
+      if (m.citations && m.citations.length > 0) {
+        lines.push('')
+        lines.push('_Fontes:_ ' + m.citations.map(c => `${c.type}:${c.ref}`).join(' · '))
+      }
+      lines.push('')
+      lines.push('---')
+      lines.push('')
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `conversa-logipilot-${analysisId.slice(0, 8)}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast({ variant: 'success', title: 'Conversa exportada' })
   }
 
   if (loading) {
@@ -81,9 +128,33 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex flex-col h-[calc(100vh-200px)] max-w-3xl">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-800">Chat com os dados</h2>
-        <p className="text-sm text-slate-500">Faça perguntas sobre a análise. A IA responde apenas com base nos dados enviados.</p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800">Chat com os dados</h2>
+          <p className="text-sm text-slate-500">Faça perguntas sobre a análise. A IA responde apenas com base nos dados enviados.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={exportConversation} className="gap-1.5 whitespace-nowrap">
+          <Download className="w-4 h-4" />
+          Exportar
+        </Button>
+      </div>
+
+      {/* FAQ chips persistentes */}
+      <div className="flex flex-wrap gap-1.5 mb-3" aria-label="Perguntas frequentes">
+        <span className="inline-flex items-center gap-1 text-xs text-slate-500 mr-1">
+          <HelpCircle className="w-3 h-3" aria-hidden="true" /> Sugestões:
+        </span>
+        {SUGGESTED_QUESTIONS.slice(0, 4).map((q) => (
+          <button
+            key={q}
+            type="button"
+            onClick={() => sendMessage(q)}
+            disabled={sending}
+            className="text-xs bg-blue-50 hover:bg-blue-100 disabled:opacity-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full transition-colors"
+          >
+            {q}
+          </button>
+        ))}
       </div>
 
       {/* Messages */}
@@ -95,18 +166,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             </div>
             <div className="text-center">
               <p className="font-semibold text-slate-700">Pergunte sobre sua análise</p>
-              <p className="text-sm text-slate-400 mt-1">Experimente uma das sugestões abaixo</p>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-2 w-full max-w-lg">
-              {suggestedQuestions.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => sendMessage(q)}
-                  className="text-left text-sm bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg p-3 transition-colors text-slate-700"
-                >
-                  {q}
-                </button>
-              ))}
+              <p className="text-sm text-slate-400 mt-1">Use uma das sugestões acima ou digite uma pergunta abaixo</p>
             </div>
           </div>
         )}
@@ -138,6 +198,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   </div>
                 )}
               </div>
+              {msg.role === 'assistant' && <ChatMessageCitations citations={msg.citations} />}
               <span className="text-xs text-slate-400 mt-1 px-1">{formatDate(msg.created_at)}</span>
             </div>
           </div>

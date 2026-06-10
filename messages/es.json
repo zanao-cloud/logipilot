@@ -1,0 +1,94 @@
+{
+  "common": {
+    "appName": "LogiPilot AI",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "loading": "Cargando…",
+    "search": "Buscar",
+    "new": "Nuevo",
+    "export": "Exportar",
+    "back": "Volver",
+    "yes": "Sí",
+    "no": "No",
+    "actions": "Acciones",
+    "language": "Idioma"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Salir",
+    "signUp": "Crear cuenta",
+    "email": "Correo",
+    "password": "Contraseña",
+    "confirmYourEmail": "Verifica tu correo",
+    "confirmationSentTo": "Enviamos un enlace de confirmación a {email}. Haz clic en el enlace para activar tu cuenta.",
+    "resendConfirmation": "Reenviar correo de confirmación",
+    "passwordRequirements": "La contraseña debe tener al menos 8 caracteres, con mayúscula, minúscula, número y carácter especial.",
+    "emailInvalid": "Correo inválido",
+    "emailAlreadyExists": "Este correo ya está registrado"
+  },
+  "upload": {
+    "title": "Nuevo análisis",
+    "subtitle": "Sube tus datos y obtén indicadores, panel y diagnóstico operativo automáticamente.",
+    "dropFiles": "Arrastra archivos o haz clic para seleccionar",
+    "analyze": "Analizar datos",
+    "consentLabel": "Acepto enviar estos datos a la IA para generar el análisis.",
+    "consentRequired": "Marca el consentimiento de IA arriba para habilitar el análisis.",
+    "noFiles": "Agrega al menos un archivo para continuar.",
+    "tagsLabel": "Etiquetas (opcional, separadas por coma)",
+    "projectLabel": "Proyecto/Cliente (opcional)",
+    "driverLabel": "Conductor (opcional)",
+    "periodStart": "Inicio del periodo (opcional)",
+    "periodEnd": "Fin del periodo (opcional)"
+  },
+  "analysis": {
+    "history": "Historial",
+    "noAnalyses": "Sin análisis aún",
+    "compare": "Comparar",
+    "rename": "Editar",
+    "rename_dialog_title": "Editar análisis",
+    "rename_dialog_subtitle": "Renombra, etiqueta y vincula a proyecto, conductor y periodo."
+  },
+  "chat": {
+    "title": "Chat con los datos",
+    "subtitle": "Haz preguntas sobre el análisis. La IA responde solo con base en los datos enviados.",
+    "suggestions": "Sugerencias:",
+    "export": "Exportar",
+    "placeholder": "Pregunta sobre los datos analizados..."
+  },
+  "dashboard": {
+    "indicators": "Indicadores",
+    "actionPlan": "Plan de acción",
+    "inconsistencies": "Inconsistencias",
+    "opportunities": "Oportunidades",
+    "executiveSummary": "Resumen ejecutivo",
+    "healthScore": "Puntuación de salud"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "empty": "Sin notificaciones aún",
+    "markAllRead": "Marcar todas como leídas",
+    "analysisCompleted": "Análisis completado",
+    "analysisFailed": "Fallo en el análisis",
+    "criticalInconsistency": "Inconsistencia crítica detectada",
+    "commentAdded": "Nuevo comentario"
+  },
+  "compare": {
+    "title": "Comparación de análisis",
+    "subtitle": "Lado a lado: indicadores comunes, deltas y dirección.",
+    "indicator": "Indicador",
+    "better": "{n} mejoraron",
+    "worse": "{n} empeoraron",
+    "neutral": "{n} neutros",
+    "noCommon": "Sin indicadores comunes para comparar."
+  },
+  "export": {
+    "title": "Exportar informe",
+    "sections": "Secciones a incluir",
+    "pdf": "Descargar PDF",
+    "excel": "Excel (.xlsx)",
+    "csv": "CSV"
+  }
+}

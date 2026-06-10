@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { formatFileSize } from '@/lib/utils'
 import { FileIcon } from '@/components/ui/file-icon'
 import { AnalysisProcessingLoader } from '@/components/ui/loading'
+import { Tooltip } from '@/components/ui/tooltip'
 
 const ACCEPTED = {
   'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'],
@@ -30,10 +31,26 @@ export default function NewAnalysisPage() {
   const [context, setContext] = useState('')
   const analysisMode = 'ai'
   const [processing, setProcessing] = useState(false)
+  const [analysisId, setAnalysisId] = useState<string | null>(null)
   const [stage, setStage] = useState<ProcessingStage>('upload')
+  const [consentAI, setConsentAI] = useState(false)
   const [error, setError] = useState('')
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; client_name?: string | null }>>([])
+  const [drivers, setDrivers] = useState<Array<{ id: string; full_name: string }>>([])
+  const [projectId, setProjectId] = useState('')
+  const [driverId, setDriverId] = useState('')
+  const [periodStart, setPeriodStart] = useState('')
+  const [periodEnd, setPeriodEnd] = useState('')
+  const [tagsInput, setTagsInput] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  useEffect(() => {
+    fetch('/api/projects').then(r => r.json()).then(d => setProjects(Array.isArray(d) ? d : [])).catch(() => {})
+    fetch('/api/organization/team').then(r => r.json()).then((d) => {
+      if (Array.isArray(d)) setDrivers(d.filter((m: { role: string }) => m.role === 'motorista'))
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const t = searchParams.get('title')
@@ -62,6 +79,7 @@ export default function NewAnalysisPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!files.length) { setError('Adicione pelo menos um arquivo para análise.'); return }
+    if (!consentAI) { setError('Você precisa autorizar o uso de IA para gerar a análise.'); return }
 
     setError('')
     setProcessing(true)
@@ -71,14 +89,16 @@ export default function NewAnalysisPage() {
     formData.append('title', title || `Análise ${new Date().toLocaleDateString('pt-BR')}`)
     formData.append('context', context)
     formData.append('analysisMode', analysisMode)
+    formData.append('consentAI', 'true')
+    if (projectId) formData.append('project_id', projectId)
+    if (driverId) formData.append('driver_id', driverId)
+    if (periodStart) formData.append('period_start', periodStart)
+    if (periodEnd) formData.append('period_end', periodEnd)
+    if (tagsInput.trim()) formData.append('tags', tagsInput)
     files.forEach(f => formData.append('files', f))
-
-    setTimeout(() => setStage('parse'), 1000)
-    setTimeout(() => setStage('analyze'), 3000)
 
     try {
       const res = await fetch('/api/analyze', { method: 'POST', body: formData })
-      setStage('save')
 
       if (!res.ok) {
         const data = await res.json()
@@ -86,6 +106,7 @@ export default function NewAnalysisPage() {
       }
 
       const { id } = await res.json()
+      setAnalysisId(id)
       router.push(`/analysis/${id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao processar análise')
@@ -93,12 +114,19 @@ export default function NewAnalysisPage() {
     }
   }
 
+  const submitDisabledReason = files.length === 0
+    ? 'Adicione pelo menos um arquivo antes de continuar.'
+    : !consentAI
+    ? 'Marque o consentimento de uso de IA acima para liberar a análise.'
+    : null
+  const isSubmitDisabled = submitDisabledReason !== null
+
   if (processing) {
     return (
       <div className="p-8">
         <Card className="max-w-lg mx-auto">
           <CardContent>
-            <AnalysisProcessingLoader stage={stage} />
+            <AnalysisProcessingLoader stage={stage} analysisId={analysisId} />
           </CardContent>
         </Card>
       </div>
@@ -136,6 +164,61 @@ export default function NewAnalysisPage() {
                 placeholder="Descreva o contexto dos dados, período, departamento ou qualquer informação relevante para a análise..."
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
+              />
+            </div>
+
+            <Input
+              label="Tags (opcional, separadas por vírgula)"
+              placeholder="Ex: mensal, sudeste, frota leve"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+            />
+
+            <div className="grid sm:grid-cols-2 gap-3">
+              {projects.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1.5">Projeto/Cliente (opcional)</label>
+                  <select
+                    value={projectId}
+                    onChange={(e) => setProjectId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/10 outline-none"
+                  >
+                    <option value="">— Nenhum —</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}{p.client_name ? ` · ${p.client_name}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {drivers.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1.5">Motorista (opcional)</label>
+                  <select
+                    value={driverId}
+                    onChange={(e) => setDriverId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/10 outline-none"
+                  >
+                    <option value="">— Nenhum —</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>{d.full_name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Input
+                label="Período início (opcional)"
+                type="date"
+                value={periodStart}
+                onChange={(e) => setPeriodStart(e.target.value)}
+              />
+              <Input
+                label="Período fim (opcional)"
+                type="date"
+                value={periodEnd}
+                onChange={(e) => setPeriodEnd(e.target.value)}
               />
             </div>
           </CardContent>
@@ -214,18 +297,35 @@ export default function NewAnalysisPage() {
           </p>
         </div>
 
-        {/* AI limits + LGPD card */}
-        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
-          <Shield className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="text-sm text-slate-600 space-y-1.5 leading-relaxed">
-            <p>
-              <strong className="text-slate-700">A IA usa apenas os dados que você envia.</strong> Ela separa fatos
-              observados, hipóteses, recomendações e limitações — e pode apresentar imprecisões. Valide antes de decidir.
+        {/* AI consent + LGPD card */}
+        <div
+          className={`flex items-start gap-3 rounded-xl p-4 border transition-colors ${
+            consentAI ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-300 ring-2 ring-amber-200/60'
+          }`}
+        >
+          <Shield className={`w-4 h-4 flex-shrink-0 mt-0.5 ${consentAI ? 'text-emerald-600' : 'text-amber-600'}`} aria-hidden="true" />
+          <div className="text-sm space-y-2 leading-relaxed flex-1">
+            <p className={consentAI ? 'text-emerald-800' : 'text-amber-900'}>
+              <strong>A IA usa apenas os dados que você envia.</strong> Ela separa fatos observados, hipóteses, recomendações
+              e limitações — e pode apresentar imprecisões. Valide antes de decidir.
             </p>
-            <p className="text-xs text-slate-500">
+            <p className={consentAI ? 'text-emerald-700 text-xs' : 'text-amber-800 text-xs'}>
               Arquivos brutos são descartados após o processamento; só o resultado estruturado fica salvo. Mais detalhes na{' '}
-              <Link href="/privacidade" target="_blank" className="text-cyan-600 hover:underline">Política de Privacidade</Link>.
+              <Link href="/privacidade" target="_blank" className="underline">Política de Privacidade</Link>.
             </p>
+            <label className="flex items-start gap-2 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={consentAI}
+                onChange={(e) => setConsentAI(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                aria-describedby="consent-ai-help"
+                required
+              />
+              <span id="consent-ai-help" className={consentAI ? 'text-emerald-900 text-sm font-medium' : 'text-amber-900 text-sm font-medium'}>
+                Concordo em enviar estes dados para a IA gerar a análise.
+              </span>
+            </label>
           </div>
         </div>
 
@@ -237,15 +337,23 @@ export default function NewAnalysisPage() {
         )}
 
         <div className="flex items-center gap-3">
-          <Button
-            type="submit"
-            size="lg"
-            disabled={files.length === 0}
-            className="gap-2"
-          >
-            <BarChart2 className="w-4 h-4" />
-            Analisar dados
-          </Button>
+          <Tooltip content={submitDisabledReason ?? ''} disabled={!isSubmitDisabled}>
+            <span className="inline-block">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isSubmitDisabled}
+                className="gap-2"
+                aria-describedby={isSubmitDisabled ? 'submit-disabled-reason' : undefined}
+              >
+                <BarChart2 className="w-4 h-4" />
+                Analisar dados
+              </Button>
+            </span>
+          </Tooltip>
+          {isSubmitDisabled && (
+            <span id="submit-disabled-reason" className="sr-only">{submitDisabledReason}</span>
+          )}
           <Button
             type="button"
             variant="outline"

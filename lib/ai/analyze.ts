@@ -151,14 +151,34 @@ function parseAIResult(text: string): AnalysisResult {
   }
 }
 
+export type ChatCitation = {
+  type: 'indicator' | 'inconsistency' | 'action' | 'opportunity' | 'section'
+  ref: string
+  label?: string
+}
+
+export type ChatReply = {
+  answer: string
+  citations: ChatCitation[]
+}
+
+const LOCALE_INSTRUCTION: Record<'pt' | 'en' | 'es', string> = {
+  pt: 'Responda em português brasileiro.',
+  en: 'Respond in English.',
+  es: 'Responde en español.',
+}
+
 export async function chatWithData(
   analysisResult: AnalysisResult,
   messages: { role: 'user' | 'assistant'; content: string }[],
-  userMessage: string
-): Promise<string> {
+  userMessage: string,
+  locale: 'pt' | 'en' | 'es' = 'pt',
+): Promise<ChatReply> {
   const ai = getGemini()
 
   const systemContext = `Você é um assistente de análise operacional. Responda perguntas sobre esta análise de dados.
+
+${LOCALE_INSTRUCTION[locale]}
 
 Análise disponível (JSON):
 ${JSON.stringify(analysisResult, null, 2).slice(0, 30000)}
@@ -167,7 +187,20 @@ REGRAS:
 - Responda apenas com base nos dados da análise acima
 - Seja direto e objetivo, use markdown quando útil
 - Se não houver dados suficientes para responder, diga claramente
-- Separe fatos de hipóteses quando relevante`
+- Separe fatos de hipóteses quando relevante
+- Sempre que possível, cite suas fontes (indicador, inconsistência, ação ou seção) usando o campo "citations"
+
+FORMATO OBRIGATÓRIO DE RESPOSTA (JSON puro, sem markdown):
+{
+  "answer": "sua resposta em markdown aqui",
+  "citations": [
+    { "type": "indicator", "ref": "<nome exato do indicador>", "label": "rótulo curto" },
+    { "type": "inconsistency", "ref": "<título exato>", "label": "..." },
+    { "type": "action", "ref": "<título da ação>", "label": "..." },
+    { "type": "opportunity", "ref": "<título>", "label": "..." },
+    { "type": "section", "ref": "diagnosis|executive_summary|action_plan|inconsistencies|opportunities", "label": "..." }
+  ]
+}`
 
   const history = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
@@ -184,8 +217,25 @@ REGRAS:
       systemInstruction: systemContext,
       temperature: 0.2,
       maxOutputTokens: 2048,
+      responseMimeType: 'application/json',
     },
   })
 
-  return response.text ?? 'Não consegui processar sua pergunta.'
+  const raw = response.text ?? ''
+  return parseChatReply(raw)
+}
+
+function parseChatReply(raw: string): ChatReply {
+  if (!raw) return { answer: 'Não consegui processar sua pergunta.', citations: [] }
+  const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*$/g, '').trim()
+  try {
+    const parsed = JSON.parse(cleaned)
+    if (typeof parsed === 'object' && parsed && typeof parsed.answer === 'string') {
+      return {
+        answer: parsed.answer,
+        citations: Array.isArray(parsed.citations) ? parsed.citations : [],
+      }
+    }
+  } catch { /* fall through */ }
+  return { answer: cleaned || raw, citations: [] }
 }

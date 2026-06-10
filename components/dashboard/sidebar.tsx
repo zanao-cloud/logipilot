@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, PlusCircle, History, LogOut,
-  Truck, BarChart3, KeyRound,
+  Truck, BarChart3, KeyRound, Briefcase,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -45,6 +45,7 @@ const navGroups: NavGroup[] = [
     title: 'Gestão',
     items: [
       { href: '/dashboard/motoristas', icon: Truck,     label: 'Motoristas', gestorOnly: true },
+      { href: '/dashboard/projetos',   icon: Briefcase, label: 'Projetos',    gestorOnly: true },
       { href: '/dashboard/acessos',    icon: KeyRound,  label: 'Acessos',     gestorOnly: true },
       { href: '/dashboard/analises',   icon: BarChart3, label: 'Análises',    gestorOnly: true },
     ],

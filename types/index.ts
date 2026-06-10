@@ -116,6 +116,7 @@ export interface ActionItem {
 export interface Analysis {
   id: string
   user_id: string
+  organization_id?: string | null
   title: string
   status: AnalysisStatus
   created_at: string
@@ -123,6 +124,31 @@ export interface Analysis {
   files: UploadedFile[]
   result?: AnalysisResult
   error_message?: string
+  tags?: string[]
+  consent_ai_at?: string | null
+  progress_pct?: number
+  progress_stage?: string | null
+  project_id?: string | null
+  driver_id?: string | null
+  period_start?: string | null
+  period_end?: string | null
+}
+
+export interface Project {
+  id: string
+  organization_id: string
+  name: string
+  client_name?: string | null
+  created_at: string
+}
+
+export interface NotificationRecord {
+  id: string
+  user_id: string
+  type: 'analysis_completed' | 'analysis_failed' | 'critical_inconsistency' | 'comment_added'
+  payload: Record<string, unknown>
+  read_at: string | null
+  created_at: string
 }
 
 export interface ChatMessage {

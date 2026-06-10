@@ -1,17 +1,67 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download, FileText, Loader2, CheckCircle, Check } from 'lucide-react'
+import { Download, FileText, Loader2, CheckCircle, Check, FileSpreadsheet, FileType2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
+import { buildCsv, downloadCsv, type CsvSection } from '@/lib/export/csv'
+import { buildWorkbook, downloadExcel, type ExcelSection } from '@/lib/export/excel'
+import { useToast } from '@/components/ui/toast'
 import type { Analysis } from '@/types'
+
+const SECTION_LABELS: Record<ExcelSection, string> = {
+  executive_summary: 'Resumo executivo',
+  indicators: 'Indicadores',
+  action_plan: 'Plano de ação',
+  inconsistencies: 'Inconsistências',
+  opportunities: 'Oportunidades',
+  bottlenecks: 'Gargalos',
+  risks: 'Riscos',
+}
 
 export default function ExportPage({ params }: { params: Promise<{ id: string }> }) {
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [done, setDone] = useState(false)
+  const [sections, setSections] = useState<Set<ExcelSection>>(new Set([
+    'executive_summary', 'indicators', 'action_plan', 'inconsistencies',
+  ]))
+  const { toast } = useToast()
+
+  function toggleSection(s: ExcelSection) {
+    setSections(prev => {
+      const next = new Set(prev)
+      if (next.has(s)) next.delete(s); else next.add(s)
+      return next
+    })
+  }
+
+  function exportExcel() {
+    if (!analysis?.result) return
+    if (sections.size === 0) {
+      toast({ variant: 'warning', title: 'Selecione ao menos uma seção' })
+      return
+    }
+    const wb = buildWorkbook(analysis.result, Array.from(sections))
+    downloadExcel(wb, `${analysis.title.replace(/[^a-z0-9-]/gi, '_')}.xlsx`)
+    toast({ variant: 'success', title: 'Excel exportado' })
+  }
+
+  function exportCsv() {
+    if (!analysis?.result) return
+    const csvSections: CsvSection[] = Array.from(sections).filter(s => s !== 'executive_summary') as CsvSection[]
+    if (csvSections.length === 0) {
+      toast({ variant: 'warning', title: 'Selecione ao menos uma seção tabular' })
+      return
+    }
+    for (const s of csvSections) {
+      const csv = buildCsv(analysis.result, s)
+      downloadCsv(csv, `${analysis.title.replace(/[^a-z0-9-]/gi, '_')}-${s}.csv`)
+    }
+    toast({ variant: 'success', title: `CSV exportado (${csvSections.length} arquivo${csvSections.length > 1 ? 's' : ''})` })
+  }
 
   useEffect(() => {
     params.then(({ id }) => {
@@ -256,6 +306,26 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
         </CardContent>
       </Card>
 
+      {/* Section selector */}
+      <Card>
+        <CardContent className="py-5">
+          <p className="text-sm font-medium text-slate-700 mb-3">Seções a incluir</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {(Object.keys(SECTION_LABELS) as ExcelSection[]).map((s) => (
+              <label key={s} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sections.has(s)}
+                  onChange={() => toggleSection(s)}
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                {SECTION_LABELS[s]}
+              </label>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {done && (
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm">
           <CheckCircle className="w-4 h-4" />
@@ -263,14 +333,23 @@ export default function ExportPage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
-      <Button onClick={handleExport} loading={exporting} size="lg" className="gap-2">
-        <Download className="w-4 h-4" />
-        {exporting ? 'Gerando PDF...' : 'Baixar Relatório PDF'}
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button onClick={handleExport} loading={exporting} size="lg" className="gap-2">
+          <Download className="w-4 h-4" />
+          {exporting ? 'Gerando PDF…' : 'Baixar PDF'}
+        </Button>
+        <Button onClick={exportExcel} variant="outline" size="lg" className="gap-2">
+          <FileSpreadsheet className="w-4 h-4" />
+          Excel (.xlsx)
+        </Button>
+        <Button onClick={exportCsv} variant="outline" size="lg" className="gap-2">
+          <FileType2 className="w-4 h-4" />
+          CSV
+        </Button>
+      </div>
 
       <p className="text-xs text-slate-400">
-        O relatório inclui: resumo executivo, diagnóstico com IA, indicadores, gargalos,
-        riscos, inconsistências, plano de ação e limitações da análise.
+        PDF inclui formatação executiva completa. Excel gera 1 aba por seção. CSV gera 1 arquivo por seção tabular.
       </p>
     </div>
   )

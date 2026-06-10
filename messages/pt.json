@@ -1,0 +1,94 @@
+{
+  "common": {
+    "appName": "LogiPilot AI",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "loading": "Carregando…",
+    "search": "Buscar",
+    "new": "Novo",
+    "export": "Exportar",
+    "back": "Voltar",
+    "yes": "Sim",
+    "no": "Não",
+    "actions": "Ações",
+    "language": "Idioma"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "signUp": "Criar conta",
+    "email": "E-mail",
+    "password": "Senha",
+    "confirmYourEmail": "Verifique seu e-mail",
+    "confirmationSentTo": "Enviamos um link de confirmação para {email}. Clique no link para ativar sua conta.",
+    "resendConfirmation": "Reenviar e-mail de confirmação",
+    "passwordRequirements": "A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, minúscula, número e caractere especial.",
+    "emailInvalid": "E-mail inválido",
+    "emailAlreadyExists": "Este e-mail já está cadastrado"
+  },
+  "upload": {
+    "title": "Nova Análise",
+    "subtitle": "Envie seus dados e obtenha indicadores, dashboard e diagnóstico operacional automaticamente.",
+    "dropFiles": "Arraste arquivos ou clique para selecionar",
+    "analyze": "Analisar dados",
+    "consentLabel": "Concordo em enviar estes dados para a IA gerar a análise.",
+    "consentRequired": "Marque o consentimento de uso de IA acima para liberar a análise.",
+    "noFiles": "Adicione pelo menos um arquivo antes de continuar.",
+    "tagsLabel": "Tags (opcional, separadas por vírgula)",
+    "projectLabel": "Projeto/Cliente (opcional)",
+    "driverLabel": "Motorista (opcional)",
+    "periodStart": "Período início (opcional)",
+    "periodEnd": "Período fim (opcional)"
+  },
+  "analysis": {
+    "history": "Histórico",
+    "noAnalyses": "Nenhuma análise ainda",
+    "compare": "Comparar",
+    "rename": "Editar",
+    "rename_dialog_title": "Editar análise",
+    "rename_dialog_subtitle": "Renomeie, marque com tags e vincule a projeto, motorista e período."
+  },
+  "chat": {
+    "title": "Chat com os dados",
+    "subtitle": "Faça perguntas sobre a análise. A IA responde apenas com base nos dados enviados.",
+    "suggestions": "Sugestões:",
+    "export": "Exportar",
+    "placeholder": "Pergunte sobre os dados analisados..."
+  },
+  "dashboard": {
+    "indicators": "Indicadores",
+    "actionPlan": "Plano de ação",
+    "inconsistencies": "Inconsistências",
+    "opportunities": "Oportunidades",
+    "executiveSummary": "Resumo executivo",
+    "healthScore": "Score de saúde"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "empty": "Sem notificações ainda",
+    "markAllRead": "Marcar todas como lidas",
+    "analysisCompleted": "Análise concluída",
+    "analysisFailed": "Falha na análise",
+    "criticalInconsistency": "Inconsistência grave detectada",
+    "commentAdded": "Novo comentário"
+  },
+  "compare": {
+    "title": "Comparação de análises",
+    "subtitle": "Lado a lado: indicadores comuns, deltas e direção.",
+    "indicator": "Indicador",
+    "better": "{n} melhoraram",
+    "worse": "{n} pioraram",
+    "neutral": "{n} neutros",
+    "noCommon": "Sem indicadores comuns para comparar."
+  },
+  "export": {
+    "title": "Exportar relatório",
+    "sections": "Seções a incluir",
+    "pdf": "Baixar PDF",
+    "excel": "Excel (.xlsx)",
+    "csv": "CSV"
+  }
+}

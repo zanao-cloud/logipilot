@@ -7,8 +7,10 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Building2, Eye, EyeOff, Sparkles } from 'lucide-react'
+import { Building2, Eye, EyeOff, Sparkles, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { PasswordStrength } from '@/components/auth/password-strength'
+import { isPasswordStrong } from '@/lib/auth/password'
 
 type PlanKey = 'free' | 'pro' | 'enterprise'
 const PLAN_LABEL: Record<PlanKey, string> = {
@@ -33,6 +35,7 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const [emailTaken, setEmailTaken] = useState(false)
   const [checkingEmail, setCheckingEmail] = useState(false)
+  const [pendingConfirmation, setPendingConfirmation] = useState(false)
 
   // Reflect plan in document title for clarity
   useEffect(() => {
@@ -60,7 +63,10 @@ function RegisterForm() {
 
     if (!name.trim()) { setError('Informe seu nome.'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('E-mail inválido.'); return }
-    if (password.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return }
+    if (!isPasswordStrong(password)) {
+      setError('A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, minúscula, número e caractere especial.')
+      return
+    }
     if (emailTaken) { setError('Este e-mail já está cadastrado.'); return }
     if (!acceptedTerms) { setError('Você precisa aceitar os Termos e a Política de Privacidade.'); return }
 
@@ -79,30 +85,54 @@ function RegisterForm() {
       return
     }
 
-    // Sign the new user in immediately — no email confirmation step.
-    const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-    if (signInError) {
-      setError('Conta criada, mas falhou ao entrar. Tente fazer login manualmente.')
-      setLoading(false)
-      return
-    }
+    setLoading(false)
+    setPendingConfirmation(true)
+  }
 
-    // If user picked Pro or Empresarial, route them through WhatsApp upgrade flow.
-    if (plan === 'pro') {
-      window.location.href =
-        'https://wa.me/5511939369341?text=' +
-        encodeURIComponent(`Olá! Acabei de criar minha conta (${email}) e quero assinar o plano Pro (R$ 97/mês).`)
-      return
+  async function resendConfirmation() {
+    setError('')
+    const res = await fetch('/api/auth/resend-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || 'Não foi possível reenviar. Tente em instantes.')
     }
-    if (plan === 'enterprise') {
-      window.location.href =
-        'https://wa.me/5511939369341?text=' +
-        encodeURIComponent(`Olá! Acabei de criar minha conta (${email}) e quero ativar o plano Empresarial (R$ 297/mês).`)
-      return
-    }
+  }
 
-    router.push('/dashboard')
+  if (pendingConfirmation) {
+    return (
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="mx-auto w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
+            <Mail className="w-7 h-7 text-blue-600" aria-hidden="true" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">Verifique seu e-mail</h1>
+          <p className="text-sm text-slate-600 mb-6">
+            Enviamos um link de confirmação para <strong>{email}</strong>. Clique no link para ativar sua conta — só depois disso o login fica disponível.
+          </p>
+          <Button onClick={resendConfirmation} variant="outline" className="w-full">
+            Reenviar e-mail de confirmação
+          </Button>
+          <p className="text-xs text-slate-400 mt-4">
+            Não recebeu? Verifique a caixa de spam ou{' '}
+            <Link href="/login" className="text-blue-600 underline">vá para o login</Link>.
+          </p>
+          {plan !== 'free' && (
+            <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg mt-4 px-3 py-2">
+              Após confirmar, retomaremos seu fluxo do plano <strong>{PLAN_LABEL[plan]}</strong>.
+            </p>
+          )}
+          {error && (
+            <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mt-4">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -183,11 +213,11 @@ function RegisterForm() {
                 name="new-password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 aria-required="true"
                 className="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 outline-none transition-colors"
               />
@@ -201,6 +231,7 @@ function RegisterForm() {
                 {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
+            <PasswordStrength password={password} />
           </div>
 
           <label className="flex items-start gap-2 text-xs text-slate-600 leading-relaxed">

@@ -4,6 +4,7 @@ import { analyzeData } from '@/lib/ai/analyze'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import type * as XLSXType from 'xlsx'
 import type { AnalysisResult, Chart } from '@/types'
+import { dispatchAnalysisNotifications } from '@/lib/notifications/dispatch'
 
 export const maxDuration = 60
 
@@ -52,6 +53,12 @@ export async function POST(request: NextRequest) {
     const context = formData.get('context') as string
     const analysisMode = formData.get('analysisMode') === 'local' ? 'local' : 'ai'
     const files = formData.getAll('files') as File[]
+    const projectId = (formData.get('project_id') as string) || null
+    const driverId = (formData.get('driver_id') as string) || null
+    const periodStart = (formData.get('period_start') as string) || null
+    const periodEnd = (formData.get('period_end') as string) || null
+    const tagsRaw = (formData.get('tags') as string) || ''
+    const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean).slice(0, 20)
 
     if (!files.length) {
       return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
@@ -78,6 +85,11 @@ export async function POST(request: NextRequest) {
         title: title || 'Análise sem título',
         status: 'processing',
         files: files.map(f => ({ name: f.name, type: f.type, size: f.size })),
+        tags,
+        project_id: projectId,
+        driver_id: driverId,
+        period_start: periodStart,
+        period_end: periodEnd,
       })
       .select()
       .single()
@@ -88,36 +100,60 @@ export async function POST(request: NextRequest) {
     }
 
     analysisId = analysis.id
+    const consentAI = formData.get('consentAI') === 'true'
+    if (consentAI) {
+      await admin.from('analyses')
+        .update({ consent_ai_at: new Date().toISOString(), progress_pct: 10, progress_stage: 'upload' })
+        .eq('id', analysis.id)
+    } else {
+      await admin.from('analyses')
+        .update({ progress_pct: 10, progress_stage: 'upload' })
+        .eq('id', analysis.id)
+    }
 
     let parsedFiles: ParsedAIFile[] = []
 
     try {
     parsedFiles = await Promise.all(files.map(parseFileForAI))
+    await admin.from('analyses')
+      .update({ progress_pct: 35, progress_stage: 'parse' })
+      .eq('id', analysis.id)
 
     if (analysisMode === 'local') {
       const result = createLocalAnalysis(parsedFiles, context)
       const { error: updateError } = await admin
         .from('analyses')
-        .update({ status: 'completed', result, updated_at: new Date().toISOString() })
+        .update({ status: 'completed', result, progress_pct: 100, progress_stage: 'save', updated_at: new Date().toISOString() })
         .eq('id', analysis.id)
 
       if (updateError) {
         throw new Error(`Erro ao salvar resultado da análise: ${updateError.message}`)
       }
 
+      await dispatchAnalysisNotifications(admin, user.id, analysis.id, title || 'Análise sem título', result)
       return NextResponse.json({ id: analysis.id, status: 'completed', mode: 'local' })
     }
 
+    await admin.from('analyses')
+      .update({ progress_pct: 55, progress_stage: 'analyze' })
+      .eq('id', analysis.id)
+
     const result = await analyzeData(parsedFiles, context)
+
+    await admin.from('analyses')
+      .update({ progress_pct: 90, progress_stage: 'save' })
+      .eq('id', analysis.id)
 
     const { error: updateError } = await admin
       .from('analyses')
-      .update({ status: 'completed', result, updated_at: new Date().toISOString() })
+      .update({ status: 'completed', result, progress_pct: 100, progress_stage: 'save', updated_at: new Date().toISOString() })
       .eq('id', analysis.id)
 
     if (updateError) {
       throw new Error(`Erro ao salvar resultado da análise: ${updateError.message}`)
     }
+
+    await dispatchAnalysisNotifications(admin, user.id, analysis.id, title || 'Análise sem título', result)
 
     return NextResponse.json({ id: analysis.id, status: 'completed' })
   } catch (err) {
@@ -128,12 +164,13 @@ export async function POST(request: NextRequest) {
       const fallbackResult = createLocalAnalysis(parsedFiles, context, true)
       const { error: fallbackUpdateError } = await admin
         .from('analyses')
-        .update({ status: 'completed', result: fallbackResult, updated_at: new Date().toISOString() })
+        .update({ status: 'completed', result: fallbackResult, progress_pct: 100, progress_stage: 'save', updated_at: new Date().toISOString() })
         .eq('id', analysis.id)
 
       if (fallbackUpdateError) {
         console.error('[analyze] failed to save fallback result', fallbackUpdateError.message)
       } else {
+        await dispatchAnalysisNotifications(admin, user.id, analysis.id, title || 'Análise sem título', fallbackResult)
         return NextResponse.json({
           id: analysis.id,
           status: 'completed',
