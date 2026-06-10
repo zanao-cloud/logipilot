@@ -31,11 +31,11 @@ const CHART_TYPE_ICONS: Record<ChartType, React.ComponentType<{ className?: stri
   pie: PieIcon,
 }
 
-export function SummaryCards({ cards, locale = 'pt' }: { cards: SummaryCard[]; locale?: 'pt' | 'en' | 'es' }) {
+export function SummaryCards({ cards }: { cards: SummaryCard[] }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {cards.map((card, i) => {
-        const formula = getFormulaTooltip(card.title, locale)
+        const formula = getFormulaTooltip(card.title)
         return (
           <div key={i} className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-1 mb-1">

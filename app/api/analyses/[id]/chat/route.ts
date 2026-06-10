@@ -47,10 +47,7 @@ export async function POST(
 
   const messages = (history || []) as { role: 'user' | 'assistant'; content: string }[]
 
-  const localeCookie = request.cookies.get('NEXT_LOCALE')?.value
-  const locale: 'pt' | 'en' | 'es' = localeCookie === 'en' ? 'en' : localeCookie === 'es' ? 'es' : 'pt'
-
-  const { answer, citations } = await chatWithData(analysis.result, messages, message, locale)
+  const { answer, citations } = await chatWithData(analysis.result, messages, message)
 
   await admin.from('chat_messages').insert([
     { analysis_id: id, user_id: user.id, role: 'user', content: message },

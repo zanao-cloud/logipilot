@@ -3,33 +3,24 @@ import type { ForecastOutput, SeriesPoint } from '@/lib/analysis/forecast'
 
 const MODEL = 'gemini-2.5-flash'
 
-const LOCALE_INSTRUCTION: Record<'pt' | 'en' | 'es', string> = {
-  pt: 'Responda em português brasileiro.',
-  en: 'Respond in English.',
-  es: 'Responde en español.',
-}
-
 export async function generateForecastNarrative(args: {
   metricName: string
   unit?: string | null
   historical: SeriesPoint[]
   output: ForecastOutput
   analysisContext?: string
-  locale?: 'pt' | 'en' | 'es'
 }): Promise<string> {
-  const { metricName, unit, historical, output, analysisContext, locale = 'pt' } = args
+  const { metricName, unit, historical, output, analysisContext } = args
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return ''
 
   const ai = new GoogleGenAI({ apiKey })
 
   const system = `Você é um analista preditivo de operações logísticas. Recebe uma série temporal histórica e a previsão estatística gerada por um modelo (regressão linear, média móvel ou Holt). Sua função:
-1. Interpretar a tendência em linguagem clara para o gestor
+1. Interpretar a tendência em linguagem clara para o gestor em português brasileiro
 2. Apontar 1-2 riscos ou oportunidades concretas
 3. Sugerir 1 ação prática
 4. Sempre destacar limitações da previsão (incerteza, tamanho da amostra)
-
-${LOCALE_INSTRUCTION[locale]}
 
 Seja conciso (máx. 4 parágrafos curtos). Use markdown apenas para destaques em negrito.`
 

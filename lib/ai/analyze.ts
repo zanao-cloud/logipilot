@@ -162,23 +162,14 @@ export type ChatReply = {
   citations: ChatCitation[]
 }
 
-const LOCALE_INSTRUCTION: Record<'pt' | 'en' | 'es', string> = {
-  pt: 'Responda em português brasileiro.',
-  en: 'Respond in English.',
-  es: 'Responde en español.',
-}
-
 export async function chatWithData(
   analysisResult: AnalysisResult,
   messages: { role: 'user' | 'assistant'; content: string }[],
   userMessage: string,
-  locale: 'pt' | 'en' | 'es' = 'pt',
 ): Promise<ChatReply> {
   const ai = getGemini()
 
-  const systemContext = `Você é um assistente de análise operacional. Responda perguntas sobre esta análise de dados.
-
-${LOCALE_INSTRUCTION[locale]}
+  const systemContext = `Você é um assistente de análise operacional. Responda perguntas sobre esta análise de dados em português brasileiro.
 
 Análise disponível (JSON):
 ${JSON.stringify(analysisResult, null, 2).slice(0, 30000)}

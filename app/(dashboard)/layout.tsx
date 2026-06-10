@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { BellDropdown } from '@/components/notifications/bell-dropdown'
-import { LocaleSwitcher } from '@/components/ui/locale-switcher'
 import type { UserProfile } from '@/lib/hooks/use-profile'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -22,7 +21,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Sidebar serverProfile={profile as UserProfile | null} />
       <main className="flex-1 ml-64 min-h-screen overflow-auto flex flex-col">
         <header className="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-sm border-b border-slate-100 px-6 h-12 flex items-center justify-end gap-2">
-          <LocaleSwitcher />
           <BellDropdown userId={user.id} />
         </header>
         <div className="flex-1">

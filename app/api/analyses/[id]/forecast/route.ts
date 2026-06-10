@@ -95,7 +95,6 @@ export async function POST(request: NextRequest, { params }: Params) {
     historical,
     output: out,
     analysisContext: result.executive_summary?.overview,
-    locale: pickLocale(request),
   })
 
   const { data: saved, error } = await admin
@@ -141,9 +140,4 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true })
-}
-
-function pickLocale(request: NextRequest): 'pt' | 'en' | 'es' {
-  const c = request.cookies.get('NEXT_LOCALE')?.value
-  return c === 'en' ? 'en' : c === 'es' ? 'es' : 'pt'
 }
