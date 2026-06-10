@@ -20,12 +20,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar serverProfile={profile as UserProfile | null} />
-      <main className="flex-1 ml-64 min-h-screen overflow-auto relative">
-        <div className="absolute top-4 right-6 z-30 flex items-center gap-2">
+      <main className="flex-1 ml-64 min-h-screen overflow-auto flex flex-col">
+        <header className="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-sm border-b border-slate-100 px-6 h-12 flex items-center justify-end gap-2">
           <LocaleSwitcher />
           <BellDropdown userId={user.id} />
+        </header>
+        <div className="flex-1">
+          {children}
         </div>
-        {children}
       </main>
     </div>
   )
