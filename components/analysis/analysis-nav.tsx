@@ -10,6 +10,7 @@ import {
   Target,
   MessageSquare,
   Download,
+  Sparkles,
 } from 'lucide-react'
 
 const tabs = [
@@ -17,6 +18,7 @@ const tabs = [
   { href: '/diagnosis', icon: Brain, label: 'Diagnóstico IA' },
   { href: '/inconsistencies', icon: AlertTriangle, label: 'Inconsistências' },
   { href: '/action-plan', icon: Target, label: 'Plano de Ação' },
+  { href: '/forecast', icon: Sparkles, label: 'Previsão' },
   { href: '/chat', icon: MessageSquare, label: 'Chat' },
   { href: '/export', icon: Download, label: 'Exportar' },
 ]
