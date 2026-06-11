@@ -1,7 +1,21 @@
 import { GoogleGenAI } from '@google/genai'
 import type { ForecastOutput, SeriesPoint } from '@/lib/analysis/forecast'
+import { isTransientAIError } from '@/lib/ai/analyze'
 
 const MODEL = 'gemini-2.5-flash'
+
+async function callWithRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  const delays = [800, 2500, 6000]
+  let lastError: unknown
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try { return await fn() } catch (err) {
+      lastError = err
+      if (!isTransientAIError(err) || attempt === maxAttempts - 1) throw err
+      await new Promise(r => setTimeout(r, delays[attempt] ?? 6000))
+    }
+  }
+  throw lastError
+}
 
 export async function generateForecastNarrative(args: {
   metricName: string
@@ -39,7 +53,7 @@ ${analysisContext ? `\nContexto da análise:\n${analysisContext.slice(0, 800)}` 
 Gere a interpretação seguindo as regras do system prompt.`
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await callWithRetry(() => ai.models.generateContent({
       model: MODEL,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
@@ -47,10 +61,10 @@ Gere a interpretação seguindo as regras do system prompt.`
         temperature: 0.3,
         maxOutputTokens: 800,
       },
-    })
+    }))
     return (response.text ?? '').trim()
   } catch (err) {
-    console.error('[forecast-narrative] failed:', err)
+    console.error('[forecast-narrative] failed após retries:', err)
     return ''
   }
 }

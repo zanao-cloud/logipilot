@@ -112,7 +112,7 @@ export async function analyzeData(files: FileInput[], userContext?: string): Pro
     })
   }
 
-  const response = await ai.models.generateContent({
+  const response = await callWithRetry(() => ai.models.generateContent({
     model: MODEL,
     contents: [{ role: 'user', parts }],
     config: {
@@ -121,7 +121,7 @@ export async function analyzeData(files: FileInput[], userContext?: string): Pro
       responseMimeType: 'application/json',
       thinkingConfig: { thinkingBudget: 1024 },
     },
-  })
+  }))
 
   const text = response.text ?? ''
   const finishReason = response.candidates?.[0]?.finishReason
@@ -129,6 +129,46 @@ export async function analyzeData(files: FileInput[], userContext?: string): Pro
     console.error('[gemini] non-STOP finishReason:', finishReason, 'usage:', response.usageMetadata)
   }
   return parseAIResult(text)
+}
+
+/**
+ * Identifica erros temporários do Gemini (503, UNAVAILABLE, overloaded, rate limit).
+ * Esses se beneficiam de retry com backoff.
+ */
+export function isTransientAIError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase()
+  return (
+    msg.includes('503') ||
+    msg.includes('unavailable') ||
+    msg.includes('overloaded') ||
+    msg.includes('high demand') ||
+    msg.includes('rate limit') ||
+    msg.includes('quota') ||
+    msg.includes('429') ||
+    msg.includes('500') ||
+    msg.includes('internal error') ||
+    msg.includes('deadline exceeded')
+  )
+}
+
+/**
+ * Retry com backoff exponencial: 1s, 3s, 8s. Só retenta erros transitórios.
+ */
+async function callWithRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  const delays = [1000, 3000, 8000]
+  let lastError: unknown
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastError = err
+      if (!isTransientAIError(err) || attempt === maxAttempts - 1) throw err
+      const wait = delays[attempt] ?? delays[delays.length - 1]
+      console.warn(`[gemini] tentativa ${attempt + 1} falhou (transient), retry em ${wait}ms`)
+      await new Promise(r => setTimeout(r, wait))
+    }
+  }
+  throw lastError
 }
 
 function parseAIResult(text: string): AnalysisResult {
@@ -198,7 +238,7 @@ FORMATO OBRIGATÓRIO DE RESPOSTA (JSON puro, sem markdown):
     parts: [{ text: m.content }],
   }))
 
-  const response = await ai.models.generateContent({
+  const response = await callWithRetry(() => ai.models.generateContent({
     model: MODEL,
     contents: [
       ...history,
@@ -210,7 +250,7 @@ FORMATO OBRIGATÓRIO DE RESPOSTA (JSON puro, sem markdown):
       maxOutputTokens: 2048,
       responseMimeType: 'application/json',
     },
-  })
+  }))
 
   const raw = response.text ?? ''
   return parseChatReply(raw)

@@ -221,7 +221,15 @@ function getErrorMessage(err: unknown): string {
 
 function isNetworkAIError(msg: string): boolean {
   const m = msg.toLowerCase()
-  return m.includes('fetch failed') || m.includes('network') || m.includes('econnreset') || m.includes('etimedout') || m.includes('enotfound')
+  return (
+    m.includes('fetch failed') || m.includes('network') ||
+    m.includes('econnreset') || m.includes('etimedout') || m.includes('enotfound') ||
+    // Erros temporários da Gemini que justificam fallback local após retry esgotar:
+    m.includes('503') || m.includes('unavailable') || m.includes('overloaded') ||
+    m.includes('high demand') || m.includes('429') || m.includes('quota') ||
+    m.includes('rate limit') || m.includes('500') || m.includes('internal error') ||
+    m.includes('deadline exceeded')
+  )
 }
 
 function createAnalysisAdminClient() {
@@ -253,6 +261,9 @@ function friendlyDatabaseError(msg: string): string {
 
 function friendlyError(msg: string): string {
   const m = msg.toLowerCase()
+  if (m.includes('503') || m.includes('unavailable') || m.includes('overloaded') || m.includes('high demand')) {
+    return 'A IA está sobrecarregada agora. Já tentamos algumas vezes — espere 1 minuto e tente novamente, ou aceite a análise estrutural reduzida que geramos.'
+  }
   if (m.includes('quota') || m.includes('429') || m.includes('resource_exhausted') || m.includes('rate_limit')) {
     return 'Limite da API de IA atingido. Aguarde alguns segundos e tente novamente.'
   }
