@@ -141,7 +141,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative flex flex-col items-center px-6 pt-28 pb-24 overflow-hidden">
+      <section className="relative flex flex-col items-center px-6 pt-12 md:pt-16 pb-24 overflow-hidden">
         <HeroBackground />
 
         {/* ── Headline FIRST ── */}
