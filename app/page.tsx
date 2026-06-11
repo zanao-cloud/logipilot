@@ -9,6 +9,7 @@ import {
   Layers, FileSpreadsheet, Table2, FileText, Presentation,
   Image, ScanLine, Type, BarChart2, MessageCircle, Mail,
 } from 'lucide-react'
+import { HeroBackground } from '@/components/landing/hero-background'
 
 function InstagramIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
@@ -141,25 +142,7 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="relative flex flex-col items-center px-6 pt-28 pb-24 overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full" style={{
-            background: 'radial-gradient(circle, rgba(14,165,233,0.07) 0%, rgba(56,189,248,0.03) 45%, transparent 70%)',
-          }} />
-          <div className="absolute top-1/4 left-1/5 w-80 h-80 rounded-full" style={{
-            background: 'radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%)',
-            filter: 'blur(60px)',
-          }} />
-          <div className="absolute bottom-1/3 right-1/5 w-72 h-72 rounded-full" style={{
-            background: 'radial-gradient(circle, rgba(16,185,129,0.04) 0%, transparent 70%)',
-            filter: 'blur(60px)',
-          }} />
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-            backgroundSize: '64px 64px',
-            maskImage: 'radial-gradient(ellipse at 50% 40%, black 20%, transparent 70%)',
-          }} />
-        </div>
+        <HeroBackground />
 
         {/* ── Headline FIRST ── */}
         <div className="relative z-10 max-w-4xl mx-auto text-center mb-20">
