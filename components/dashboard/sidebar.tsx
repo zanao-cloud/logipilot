@@ -89,7 +89,7 @@ export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks
           <img
             src="/logo.png"
             alt="Logipilot AI"
-            className="h-9 w-auto"
+            className="h-20 w-auto"
             style={{ filter: 'brightness(0) invert(1)' }}
           />
         </Link>
