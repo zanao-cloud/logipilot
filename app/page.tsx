@@ -734,32 +734,29 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href="https://wa.me/5511939369341" target="_blank" rel="noopener noreferrer"
               aria-label="WhatsApp (11) 93936-9341"
-              className="inline-flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-slate-300 transition-all"
+              className="inline-flex items-center justify-center rounded-xl w-11 h-11 transition-all"
               style={{ background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.2)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.14)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.08)' }}>
-              <MessageCircle className="w-4 h-4" style={{ color: '#25d366' }} />
-              <span className="font-medium">(11) 93936-9341</span>
+              <MessageCircle className="w-5 h-5" style={{ color: '#25d366' }} />
             </a>
 
             <a href="https://instagram.com/logipilotai" target="_blank" rel="noopener noreferrer"
               aria-label="Instagram @logipilotai"
-              className="inline-flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-slate-300 transition-all"
+              className="inline-flex items-center justify-center rounded-xl w-11 h-11 transition-all"
               style={{ background: 'rgba(225,48,108,0.08)', border: '1px solid rgba(225,48,108,0.2)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(225,48,108,0.14)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(225,48,108,0.08)' }}>
-              <InstagramIcon className="w-4 h-4" style={{ color: '#e1306c' }} />
-              <span className="font-medium">@logipilotai</span>
+              <InstagramIcon className="w-5 h-5" style={{ color: '#e1306c' }} />
             </a>
 
             <a href="mailto:logipilot@gmail.com"
               aria-label="E-mail logipilot@gmail.com"
-              className="inline-flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-slate-300 transition-all"
+              className="inline-flex items-center justify-center rounded-xl w-11 h-11 transition-all"
               style={{ background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,165,233,0.14)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(14,165,233,0.08)' }}>
-              <Mail className="w-4 h-4 text-sky-400" />
-              <span className="font-medium">logipilot@gmail.com</span>
+              <Mail className="w-5 h-5 text-sky-400" />
             </a>
           </div>
 
