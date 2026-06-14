@@ -251,7 +251,8 @@ export default function AcessosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#060d1a] p-8 max-w-3xl">
+    <div className="min-h-screen bg-[#060d1a] p-8">
+     <div className="max-w-3xl mx-auto">
 
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
@@ -549,6 +550,7 @@ export default function AcessosPage() {
           )}
         </div>
       )}
+     </div>
     </div>
   )
 }
