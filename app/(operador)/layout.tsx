@@ -1,26 +1,23 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { OperadorSidebar } from '@/components/operador/sidebar'
+import { ProfileProvider } from '@/lib/profile-context'
+import { getCurrentUser, getCurrentProfile } from '@/lib/auth-cache'
 
 export default async function OperadorLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect('/operador/login')
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
+  const profile = await getCurrentProfile()
   if (profile && profile.role !== 'operador') redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <OperadorSidebar />
-      <main className="flex-1 ml-64 min-h-screen overflow-auto">
-        {children}
-      </main>
-    </div>
+    <ProfileProvider value={profile}>
+      <div className="min-h-screen bg-slate-50 flex">
+        <OperadorSidebar />
+        <main className="flex-1 ml-64 min-h-screen overflow-auto">
+          {children}
+        </main>
+      </div>
+    </ProfileProvider>
   )
 }

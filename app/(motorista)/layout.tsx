@@ -1,22 +1,19 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { ProfileProvider } from '@/lib/profile-context'
+import { getCurrentUser, getCurrentProfile } from '@/lib/auth-cache'
 
 export default async function MotoristaLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect('/motorista/login')
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
+  const profile = await getCurrentProfile()
   if (profile && profile.role !== 'motorista') redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {children}
-    </div>
+    <ProfileProvider value={profile}>
+      <div className="min-h-screen bg-slate-50">
+        {children}
+      </div>
+    </ProfileProvider>
   )
 }

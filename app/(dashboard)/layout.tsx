@@ -1,32 +1,28 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { BellDropdown } from '@/components/notifications/bell-dropdown'
-import type { UserProfile } from '@/lib/hooks/use-profile'
+import { ProfileProvider } from '@/lib/profile-context'
+import { getCurrentUser, getCurrentProfile } from '@/lib/auth-cache'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getCurrentUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('id, role, full_name, organization_id, phone, vehicle_plate, organizations(id, name)')
-    .eq('id', user.id)
-    .single()
+  const profile = await getCurrentProfile()
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <Sidebar serverProfile={profile as UserProfile | null} />
-      <main className="flex-1 ml-64 min-h-screen overflow-auto flex flex-col relative">
-        <div className="absolute top-3 right-4 z-30">
-          <BellDropdown userId={user.id} />
-        </div>
-        <div className="flex-1">
-          {children}
-        </div>
-      </main>
-    </div>
+    <ProfileProvider value={profile}>
+      <div className="min-h-screen bg-slate-50 flex">
+        <Sidebar serverProfile={profile} />
+        <main className="flex-1 ml-64 min-h-screen overflow-auto flex flex-col relative">
+          <div className="absolute top-3 right-4 z-30">
+            <BellDropdown userId={user.id} />
+          </div>
+          <div className="flex-1">
+            {children}
+          </div>
+        </main>
+      </div>
+    </ProfileProvider>
   )
 }
