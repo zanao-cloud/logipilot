@@ -26,7 +26,7 @@ export async function GET() {
 
   const { data: team } = await adminRead
     .from('user_profiles')
-    .select('id, full_name, role, phone, vehicle_plate, created_at')
+    .select('id, full_name, role, phone, vehicle_plate, avatar_url, created_at')
     .eq('organization_id', myProfile.organization_id)
     .order('role')
 

@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, PlusCircle, History, LogOut, ChevronRight, Zap } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, History, LogOut, ChevronRight, Zap, Camera, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useProfile } from '@/lib/hooks/use-profile'
+import { Avatar } from '@/components/ui/avatar'
 
 const navItems = [
   { href: '/operador', icon: LayoutDashboard, label: 'Painel' },
@@ -18,10 +20,37 @@ export function OperadorSidebar() {
   const router = useRouter()
   const supabase = createClient()
   const { profile } = useProfile()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(undefined)
+  const [uploading, setUploading] = useState(false)
+  const currentAvatar = avatarUrl !== undefined ? avatarUrl : profile?.avatar_url ?? null
 
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/profile/avatar', { method: 'POST', body: form })
+      const data = await res.json()
+      if (res.ok && data.avatar_url) {
+        setAvatarUrl(data.avatar_url)
+        router.refresh()
+      } else {
+        alert(data.error || 'Falha ao enviar imagem.')
+      }
+    } catch {
+      alert('Erro de rede ao enviar imagem.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   return (
@@ -34,12 +63,35 @@ export function OperadorSidebar() {
           <span className="font-bold text-white text-sm">LogiPilot <span className="text-amber-400">AI</span></span>
         </Link>
         {profile && (
-          <div className="mt-3 px-1">
-            <p className="text-xs text-slate-400 truncate">{profile.full_name}</p>
-            <span className="text-xs font-medium text-amber-400">Operador</span>
-            {profile.organizations?.name && (
-              <p className="text-xs text-slate-500 truncate mt-0.5">{profile.organizations.name}</p>
-            )}
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              aria-label="Alterar foto de perfil"
+              className="relative group rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <Avatar src={currentAvatar} name={profile.full_name || ''} role="operador" size="md" />
+              <span className="absolute inset-0 rounded-xl bg-black/55 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {uploading
+                  ? <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  : <Camera className="w-3.5 h-3.5 text-white" />}
+              </span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-slate-300 truncate font-medium">{profile.full_name}</p>
+              <span className="text-xs font-medium text-amber-400">Operador</span>
+              {profile.organizations?.name && (
+                <p className="text-xs text-slate-500 truncate mt-0.5">{profile.organizations.name}</p>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -7,6 +7,7 @@ import {
   Shield, Trash2, Pencil, Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Avatar } from '@/components/ui/avatar'
 import { formatDate } from '@/lib/utils'
 import type { Member } from '@/types'
 
@@ -364,10 +365,14 @@ export default function AcessosPage() {
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
             >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                style={{ background: accentGlow, color: accentColor, border: `1px solid ${accentBorder}` }}>
-                {getInitials(member.full_name)}
-              </div>
+              {member.avatar_url ? (
+                <Avatar src={member.avatar_url} name={member.full_name} role={member.role} size="lg" />
+              ) : (
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
+                  style={{ background: accentGlow, color: accentColor, border: `1px solid ${accentBorder}` }}>
+                  {getInitials(member.full_name)}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-white truncate">{member.full_name}</p>
                 <div className="flex flex-wrap items-center gap-3 mt-0.5 text-xs text-slate-500">

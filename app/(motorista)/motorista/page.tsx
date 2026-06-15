@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/lib/hooks/use-profile'
+import { Avatar } from '@/components/ui/avatar'
 import {
   Truck, Package, TrendingUp, CheckCircle,
   MapPin, LogOut, Zap, Bell, Star, ChevronDown, ChevronUp,
-  LayoutDashboard,
+  LayoutDashboard, Camera, Loader2,
 } from 'lucide-react'
 
 type Section = 'inicio' | 'entregas' | 'rota' | 'metricas'
@@ -27,10 +28,37 @@ export default function MotoristaPage() {
   const [activeTab, setActiveTab] = useState<'hoje' | 'semana' | 'mes'>('hoje')
   const [activeSection, setActiveSection] = useState<Section>('inicio')
   const [showAllDeliveries, setShowAllDeliveries] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(undefined)
+  const [uploading, setUploading] = useState(false)
+  const currentAvatar = avatarUrl !== undefined ? avatarUrl : profile?.avatar_url ?? null
 
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/profile/avatar', { method: 'POST', body: form })
+      const data = await res.json()
+      if (res.ok && data.avatar_url) {
+        setAvatarUrl(data.avatar_url)
+        router.refresh()
+      } else {
+        alert(data.error || 'Falha ao enviar imagem.')
+      }
+    } catch {
+      alert('Erro de rede ao enviar imagem.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   if (loading) {
@@ -88,10 +116,35 @@ export default function MotoristaPage() {
           </div>
         </div>
 
-        <p className="text-slate-400 text-sm">{greeting},</p>
-        <h1 className="text-2xl font-bold text-white mt-0.5">
-          {profile?.full_name?.split(' ')[0] || 'Motorista'}
-        </h1>
+        <div className="flex items-center gap-3 mb-1">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            aria-label="Alterar foto de perfil"
+            className="relative group rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          >
+            <Avatar src={currentAvatar} name={profile?.full_name || ''} role="motorista" size="lg" />
+            <span className="absolute inset-0 rounded-xl bg-black/55 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {uploading
+                ? <Loader2 className="w-4 h-4 text-white animate-spin" />
+                : <Camera className="w-4 h-4 text-white" />}
+            </span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+          <div>
+            <p className="text-slate-400 text-sm">{greeting},</p>
+            <h1 className="text-2xl font-bold text-white mt-0.5 leading-tight">
+              {profile?.full_name?.split(' ')[0] || 'Motorista'}
+            </h1>
+          </div>
+        </div>
         {profile?.organizations?.name && (
           <p className="text-slate-400 text-xs mt-1">{profile.organizations.name}</p>
         )}

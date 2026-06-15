@@ -6,6 +6,7 @@ export interface Member {
   role: 'gestor' | 'operador' | 'motorista'
   phone?: string
   vehicle_plate?: string
+  avatar_url?: string | null
   created_at?: string
 }
 

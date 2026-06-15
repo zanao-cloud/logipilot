@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, PlusCircle, History, LogOut,
-  Truck, BarChart3, KeyRound, Briefcase,
+  Truck, BarChart3, KeyRound, Briefcase, Camera, Loader2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/lib/hooks/use-profile'
+import { Avatar } from '@/components/ui/avatar'
 
 const ROLE_COLOR: Record<string, string> = {
   gestor:   'bg-blue-500',
@@ -52,27 +54,47 @@ const navGroups: NavGroup[] = [
   },
 ]
 
-function getInitials(name: string) {
-  const parts = (name || '').trim().split(' ')
-  return parts.length >= 2
-    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    : (parts[0] || '?').slice(0, 2).toUpperCase()
-}
-
 export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks/use-profile').UserProfile | null }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
   const { profile: clientProfile, loading: clientLoading } = useProfile()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(undefined)
+  const [uploading, setUploading] = useState(false)
 
   // serverProfile !== undefined means the server already ran the query (even if result is null)
   const serverAnswered = serverProfile !== undefined
   const profile = serverAnswered ? (serverProfile ?? clientProfile) : clientProfile
   const profileLoading = !serverAnswered && clientLoading
+  const currentAvatar = avatarUrl !== undefined ? avatarUrl : profile?.avatar_url ?? null
 
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/profile/avatar', { method: 'POST', body: form })
+      const data = await res.json()
+      if (res.ok && data.avatar_url) {
+        setAvatarUrl(data.avatar_url)
+        router.refresh()
+      } else {
+        alert(data.error || 'Falha ao enviar imagem.')
+      }
+    } catch {
+      alert('Erro de rede ao enviar imagem.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   function isActive(href: string) {
@@ -98,12 +120,27 @@ export function Sidebar({ serverProfile }: { serverProfile?: import('@/lib/hooks
       {/* User card */}
       {profile && (
         <div className="mx-3 mb-4 rounded-xl bg-white/5 border border-white/8 p-3 flex items-center gap-3">
-          <div className={cn(
-            'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-xs font-bold shadow-md',
-            ROLE_COLOR[profile.role] || 'bg-slate-500'
-          )}>
-            {getInitials(profile.full_name || '')}
-          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            aria-label="Alterar foto de perfil"
+            className="relative group flex-shrink-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400"
+          >
+            <Avatar src={currentAvatar} name={profile.full_name || ''} role={profile.role} size="md" />
+            <span className="absolute inset-0 rounded-xl bg-black/55 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {uploading
+                ? <Loader2 className="w-4 h-4 text-white animate-spin" />
+                : <Camera className="w-3.5 h-3.5 text-white" />}
+            </span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-white truncate leading-tight">
               {profile.full_name?.split(' ')[0] || 'Usuário'}
