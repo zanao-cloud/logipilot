@@ -21,7 +21,7 @@ export const getCurrentProfile = cache(async (): Promise<UserProfile | null> => 
 
   const { data } = await admin
     .from('user_profiles')
-    .select('id, role, full_name, organization_id, phone, vehicle_plate, organizations(id, name)')
+    .select('id, role, full_name, organization_id, phone, vehicle_plate, avatar_url, organizations(id, name)')
     .eq('id', user.id)
     .maybeSingle()
 
