@@ -27,18 +27,23 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  if (!user) {
-    if (pathname.startsWith('/operador') && pathname !== '/operador/login') {
-      return NextResponse.redirect(new URL('/operador/login', request.url))
-    }
-    if (pathname.startsWith('/motorista') && pathname !== '/motorista/login') {
-      return NextResponse.redirect(new URL('/motorista/login', request.url))
-    }
-    if (['/dashboard', '/analysis', '/history'].some(p => pathname.startsWith(p))) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-    return supabaseResponse
-  }
+  // TEMPORÁRIO: gate de login desativado a pedido (projeto Supabase
+  // hbijlpheqicxecrhczza fora do ar / DNS não resolve). Reativar o bloco
+  // abaixo assim que o Supabase voltar — sem ele, /dashboard, /operador e
+  // /motorista ficam acessíveis sem autenticação.
+  // if (!user) {
+  //   if (pathname.startsWith('/operador') && pathname !== '/operador/login') {
+  //     return NextResponse.redirect(new URL('/operador/login', request.url))
+  //   }
+  //   if (pathname.startsWith('/motorista') && pathname !== '/motorista/login') {
+  //     return NextResponse.redirect(new URL('/motorista/login', request.url))
+  //   }
+  //   if (['/dashboard', '/analysis', '/history'].some(p => pathname.startsWith(p))) {
+  //     return NextResponse.redirect(new URL('/login', request.url))
+  //   }
+  //   return supabaseResponse
+  // }
+  if (!user) return supabaseResponse
 
   // Logged-in. Bounce login/register to the right home for the user's role.
   if (pathname === '/login' || pathname === '/register'
