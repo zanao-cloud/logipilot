@@ -5,33 +5,18 @@ export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Truck, Eye, EyeOff } from 'lucide-react'
 
 export default function MotoristaLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error || !data.session) {
-      setError('E-mail ou senha incorretos.')
-      setLoading(false)
-      return
-    }
-
+    // Demo: acesso liberado direto, sem checar credenciais.
     router.push('/motorista')
-    router.refresh()
   }
 
   return (
@@ -93,22 +78,11 @@ export default function MotoristaLoginPage() {
             </div>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
-              {error}
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-base transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
           >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              'Entrar'
-            )}
+            Entrar
           </button>
         </form>
 

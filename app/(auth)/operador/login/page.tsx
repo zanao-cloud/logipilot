@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Users, ArrowLeft } from 'lucide-react'
@@ -13,26 +12,12 @@ import { Users, ArrowLeft } from 'lucide-react'
 export default function OperadorLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error || !data.session) {
-      setError('E-mail ou senha incorretos. Verifique com seu gestor.')
-      setLoading(false)
-      return
-    }
-
+    // Demo: acesso liberado direto, sem checar credenciais.
     router.push('/operador')
-    router.refresh()
   }
 
   return (
@@ -79,17 +64,10 @@ export default function OperadorLoginPage() {
               required
             />
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-                {error}
-              </div>
-            )}
-
             <Button
               type="submit"
               className="w-full"
               size="lg"
-              loading={loading}
             >
               Entrar como Operador
             </Button>
