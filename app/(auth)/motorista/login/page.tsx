@@ -5,6 +5,8 @@ export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { DEMO_CREDENTIALS, DEMO_PASSWORD } from '@/lib/auth/demo'
 import { Truck, Eye, EyeOff } from 'lucide-react'
 
 export default function MotoristaLoginPage() {
@@ -12,11 +14,14 @@ export default function MotoristaLoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+  const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // Demo: acesso liberado direto, sem checar credenciais.
+    // Demo: entra sempre na conta de demonstração, sem checar o que foi digitado.
+    await supabase.auth.signInWithPassword({ email: DEMO_CREDENTIALS.motorista, password: DEMO_PASSWORD })
     router.push('/motorista')
+    router.refresh()
   }
 
   return (
