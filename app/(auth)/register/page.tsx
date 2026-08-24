@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Building2, Eye, EyeOff, Sparkles, Mail } from 'lucide-react'
+import { Building2, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { PasswordStrength } from '@/components/auth/password-strength'
 import { isPasswordStrong } from '@/lib/auth/password'
@@ -35,7 +35,7 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const [emailTaken, setEmailTaken] = useState(false)
   const [checkingEmail, setCheckingEmail] = useState(false)
-  const [pendingConfirmation, setPendingConfirmation] = useState(false)
+  const supabase = createClient()
 
   // Reflect plan in document title for clarity
   useEffect(() => {
@@ -85,54 +85,15 @@ function RegisterForm() {
       return
     }
 
-    setLoading(false)
-    setPendingConfirmation(true)
-  }
-
-  async function resendConfirmation() {
-    setError('')
-    const res = await fetch('/api/auth/resend-confirmation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      setError(data.error || 'Não foi possível reenviar. Tente em instantes.')
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    if (signInError) {
+      setLoading(false)
+      router.push('/login')
+      return
     }
-  }
 
-  if (pendingConfirmation) {
-    return (
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="mx-auto w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
-            <Mail className="w-7 h-7 text-blue-600" aria-hidden="true" />
-          </div>
-          <h1 className="text-xl font-bold text-slate-900 mb-2">Verifique seu e-mail</h1>
-          <p className="text-sm text-slate-600 mb-6">
-            Enviamos um link de confirmação para <strong>{email}</strong>. Clique no link para ativar sua conta — só depois disso o login fica disponível.
-          </p>
-          <Button onClick={resendConfirmation} variant="outline" className="w-full">
-            Reenviar e-mail de confirmação
-          </Button>
-          <p className="text-xs text-slate-400 mt-4">
-            Não recebeu? Verifique a caixa de spam ou{' '}
-            <Link href="/login" className="text-blue-600 underline">vá para o login</Link>.
-          </p>
-          {plan !== 'free' && (
-            <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg mt-4 px-3 py-2">
-              Após confirmar, retomaremos seu fluxo do plano <strong>{PLAN_LABEL[plan]}</strong>.
-            </p>
-          )}
-          {error && (
-            <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mt-4">
-              {error}
-            </div>
-          )}
-        </div>
-      </div>
-    )
+    router.push('/dashboard')
+    router.refresh()
   }
 
   return (

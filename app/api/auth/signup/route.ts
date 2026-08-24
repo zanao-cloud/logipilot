@@ -27,13 +27,11 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Cria o usuário sem confirmar e dispara o e-mail de confirmação.
-  // O usuário só consegue logar depois de clicar no link.
-  const origin = request.nextUrl.origin
+  // Conta já criada confirmada — login liberado imediatamente após o cadastro.
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
-    email_confirm: false,
+    email_confirm: true,
     user_metadata: { full_name: name, company },
   })
 
@@ -67,24 +65,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar perfil' }, { status: 500 })
   }
 
-  // Dispara o link de confirmação por e-mail. Em produção, configure o template
-  // SMTP em Supabase → Authentication → Email Templates. Em dev, o link aparece
-  // nos logs do Supabase Studio.
-  const { error: inviteError } = await admin.auth.admin.generateLink({
-    type: 'signup',
-    email,
-    password,
-    options: { redirectTo: `${origin}/api/auth/callback` },
-  })
-
-  if (inviteError) {
-    // Não bloqueia o cadastro — o usuário pode reenviar o e-mail depois.
-    console.error('[signup] failed to send confirmation email:', inviteError.message)
-  }
-
-  return NextResponse.json({
-    id: userId,
-    email,
-    needsConfirmation: true,
-  })
+  return NextResponse.json({ id: userId, email })
 }
