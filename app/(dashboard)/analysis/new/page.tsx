@@ -78,6 +78,7 @@ export default function NewAnalysisPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!title.trim()) { setError('Informe um título para a análise.'); return }
     if (!files.length) { setError('Adicione pelo menos um arquivo para análise.'); return }
     if (!consentAI) { setError('Você precisa autorizar o uso de IA para gerar a análise.'); return }
 
@@ -86,7 +87,7 @@ export default function NewAnalysisPage() {
     setStage('upload')
 
     const formData = new FormData()
-    formData.append('title', title || `Análise ${new Date().toLocaleDateString('pt-BR')}`)
+    formData.append('title', title)
     formData.append('context', context)
     formData.append('analysisMode', analysisMode)
     formData.append('consentAI', 'true')
@@ -115,6 +116,8 @@ export default function NewAnalysisPage() {
   }
 
   const submitDisabledReason = files.length === 0
+    ? 'Informe um título para a análise.'
+    : files.length === 0
     ? 'Adicione pelo menos um arquivo antes de continuar.'
     : !consentAI
     ? 'Marque o consentimento de uso de IA acima para liberar a análise.'
@@ -150,10 +153,11 @@ export default function NewAnalysisPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
-              label="Título da análise (opcional)"
+              label="Título da análise"
               placeholder="Ex: Análise Operacional Maio 2025 — Logística"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              required
             />
             <div>
               <label className="text-sm font-medium text-slate-700 block mb-1.5">
