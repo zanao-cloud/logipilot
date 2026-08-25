@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Send, Bot, User, Loader2, Download, HelpCircle } from 'lucide-react'
+import { Send, User, Loader2, Download, HelpCircle } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
 import type { ChatMessage } from '@/types'
@@ -91,7 +92,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       toast({ variant: 'warning', title: 'Sem mensagens para exportar' })
       return
     }
-    const lines = ['# Conversa com a IA — LogiPilot', '']
+    const lines = ['# Conversa com o Pilô — LogiPilot', '']
     for (const m of messages) {
       const who = m.role === 'user' ? '**Você**' : '**IA**'
       const ts = new Date(m.created_at).toLocaleString()
@@ -130,8 +131,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     <div className="flex flex-col h-[calc(100vh-200px)] max-w-3xl">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-800">Chat com os dados</h2>
-          <p className="text-sm text-slate-500">Faça perguntas sobre a análise. A IA responde apenas com base nos dados enviados.</p>
+          <h2 className="text-lg font-semibold text-slate-800">Pilô</h2>
+          <p className="text-sm text-slate-500">Seu assistente de análise. O Pilô responde apenas com base nos dados enviados.</p>
         </div>
         <Button variant="outline" size="sm" onClick={exportConversation} className="gap-1.5 whitespace-nowrap">
           <Download className="w-4 h-4" />
@@ -161,11 +162,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       <div className="flex-1 overflow-y-auto bg-white border border-slate-100 rounded-xl p-4 space-y-4 scrollbar-thin">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-6 py-8">
-            <div className="w-16 h-16 bg-[#1E3A5F]/5 rounded-full flex items-center justify-center">
-              <Bot className="w-8 h-8 text-[#1E3A5F]" />
+            <div className="w-16 h-16 rounded-full overflow-hidden relative">
+              <Image src="/pilo.png" alt="Pilô" fill sizes="64px" className="object-cover" />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-slate-700">Pergunte sobre sua análise</p>
+              <p className="font-semibold text-slate-700">Fale com o Pilô sobre sua análise</p>
               <p className="text-sm text-slate-400 mt-1">Use uma das sugestões acima ou digite uma pergunta abaixo</p>
             </div>
           </div>
@@ -173,10 +174,10 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
         {messages.map((msg) => (
           <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-              msg.role === 'user' ? 'bg-[#1E3A5F] text-white' : 'bg-slate-100 text-slate-600'
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden ${
+              msg.role === 'user' ? 'bg-[#1E3A5F] text-white' : 'bg-slate-100'
             }`}>
-              {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+              {msg.role === 'user' ? <User className="w-4 h-4" /> : <Image src="/pilo.png" alt="Pilô" fill sizes="32px" className="object-cover" />}
             </div>
             <div className={`max-w-[75%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
               <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
@@ -199,15 +200,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                 )}
               </div>
               {msg.role === 'assistant' && <ChatMessageCitations citations={msg.citations} />}
-              <span className="text-xs text-slate-400 mt-1 px-1">{formatDate(msg.created_at)}</span>
+              <span className="text-xs text-slate-400 mt-1 px-1">{formatDate(msg.created_at)}
+                  {msg.role === 'assistant' && ' - Pilô. '}
+              </span>
             </div>
           </div>
         ))}
 
         {sending && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-slate-600" />
+            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center relative overflow-hidden">
+              <Image src="/pilo.png" alt="Pilô" fill sizes="32px" className="object-cover" />
             </div>
             <div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm px-4 py-3">
               <div className="flex gap-1 items-center h-5">
@@ -240,7 +243,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </form>
 
       <p className="text-xs text-slate-400 mt-2 text-center">
-        A IA responde somente com base nos dados da análise · Respostas podem conter imprecisões
+        O Pilô responde somente com base nos dados da análise · Respostas podem conter imprecisões
       </p>
     </div>
   )

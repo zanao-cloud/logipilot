@@ -12,6 +12,7 @@ import { formatFileSize } from '@/lib/utils'
 import { FileIcon } from '@/components/ui/file-icon'
 import { AnalysisProcessingLoader } from '@/components/ui/loading'
 import { Tooltip } from '@/components/ui/tooltip'
+import { useToast } from '@/components/ui/toast'
 
 const ACCEPTED = {
   'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'],
@@ -44,6 +45,7 @@ export default function NewAnalysisPage() {
   const [tagsInput, setTagsInput] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetch('/api/projects').then(r => r.json()).then(d => setProjects(Array.isArray(d) ? d : [])).catch(() => {})
@@ -108,14 +110,27 @@ export default function NewAnalysisPage() {
 
       const { id } = await res.json()
       setAnalysisId(id)
-      router.push(`/analysis/${id}`)
+      // A navegação só acontece em handleAnalysisDone, quando o polling
+      // do AnalysisProcessingLoader detectar que o status virou "completed".
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao processar análise')
       setProcessing(false)
     }
   }
 
-  const submitDisabledReason = files.length === 0
+  function handleAnalysisDone({ status, errorMessage }: { status: 'completed' | 'error'; errorMessage?: string | null }) {
+    if (status === 'error') {
+      setError(errorMessage || 'Erro ao processar análise')
+      setProcessing(false)
+      return
+    }
+    if (errorMessage) {
+      toast({ variant: 'warning', title: errorMessage })
+    }
+    router.push(`/analysis/${analysisId}`)
+  }
+
+  const submitDisabledReason = !title.trim()
     ? 'Informe um título para a análise.'
     : files.length === 0
     ? 'Adicione pelo menos um arquivo antes de continuar.'
@@ -129,7 +144,7 @@ export default function NewAnalysisPage() {
       <div className="p-8">
         <Card className="max-w-lg mx-auto">
           <CardContent>
-            <AnalysisProcessingLoader stage={stage} analysisId={analysisId} />
+            <AnalysisProcessingLoader stage={stage} analysisId={analysisId} onDone={handleAnalysisDone} />
           </CardContent>
         </Card>
       </div>

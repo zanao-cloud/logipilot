@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { analyzeData } from '@/lib/ai/analyze'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
@@ -25,190 +26,163 @@ interface ParsedAIFile {
 }
 
 export async function POST(request: NextRequest) {
-  // Top-level try-catch ensures every error returns JSON, never drops the connection.
-  let admin: ReturnType<typeof createAnalysisAdminClient> | null = null
-  let analysisId: string | null = null
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const admin = createAnalysisAdminClient()
+
+  let formData: FormData
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    formData = await request.formData()
+  } catch {
+    return NextResponse.json(
+      { error: 'Falha ao ler o arquivo enviado. Verifique o tamanho e o formato e tente novamente.' },
+      { status: 400 },
+    )
+  }
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const title = formData.get('title') as string
+  const context = formData.get('context') as string
+  const analysisMode = formData.get('analysisMode') === 'local' ? 'local' : 'ai'
+  const files = formData.getAll('files') as File[]
+  const projectId = (formData.get('project_id') as string) || null
+  const driverId = (formData.get('driver_id') as string) || null
+  const periodStart = (formData.get('period_start') as string) || null
+  const periodEnd = (formData.get('period_end') as string) || null
+  const tagsRaw = (formData.get('tags') as string) || ''
+  const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean).slice(0, 20)
 
-    admin = createAnalysisAdminClient()
+  if (!files.length) {
+    return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
+  }
 
-    let formData: FormData
-    try {
-      formData = await request.formData()
-    } catch {
-      return NextResponse.json(
-        { error: 'Falha ao ler o arquivo enviado. Verifique o tamanho e o formato e tente novamente.' },
-        { status: 400 },
-      )
-    }
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0)
+  if (totalBytes > MAX_TOTAL_UPLOAD_BYTES) {
+    return NextResponse.json({
+      error: 'Arquivos muito grandes para uma única análise. Envie menos arquivos ou reduza a planilha.',
+    }, { status: 413 })
+  }
 
-    const title = formData.get('title') as string
-    const context = formData.get('context') as string
-    const analysisMode = formData.get('analysisMode') === 'local' ? 'local' : 'ai'
-    const files = formData.getAll('files') as File[]
-    const projectId = (formData.get('project_id') as string) || null
-    const driverId = (formData.get('driver_id') as string) || null
-    const periodStart = (formData.get('period_start') as string) || null
-    const periodEnd = (formData.get('period_end') as string) || null
-    const tagsRaw = (formData.get('tags') as string) || ''
-    const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean).slice(0, 20)
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
 
-    if (!files.length) {
-      return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
-    }
+  const { data: analysis, error: insertError } = await admin
+    .from('analyses')
+    .insert({
+      user_id: user.id,
+      organization_id: profile?.organization_id ?? null,
+      title: title || 'Análise sem título',
+      status: 'processing',
+      files: files.map(f => ({ name: f.name, type: f.type, size: f.size })),
+      tags,
+      project_id: projectId,
+      driver_id: driverId,
+      period_start: periodStart,
+      period_end: periodEnd,
+    })
+    .select()
+    .single()
 
-    const totalBytes = files.reduce((sum, file) => sum + file.size, 0)
-    if (totalBytes > MAX_TOTAL_UPLOAD_BYTES) {
-      return NextResponse.json({
-        error: 'Arquivos muito grandes para uma única análise. Envie menos arquivos ou reduza a planilha.',
-      }, { status: 413 })
-    }
+  if (insertError) {
+    console.error('[analyze] insert failed', insertError.message)
+    return NextResponse.json({ error: friendlyDatabaseError(insertError.message) }, { status: 500 })
+  }
 
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('organization_id')
-      .eq('id', user.id)
-      .single()
+  const consentAI = formData.get('consentAI') === 'true'
+  await admin.from('analyses')
+    .update({
+      ...(consentAI ? { consent_ai_at: new Date().toISOString() } : {}),
+      progress_pct: 10,
+      progress_stage: 'upload',
+    })
+    .eq('id', analysis.id)
 
-    const { data: analysis, error: insertError } = await admin
-      .from('analyses')
-      .insert({
-        user_id: user.id,
-        organization_id: profile?.organization_id ?? null,
-        title: title || 'Análise sem título',
-        status: 'processing',
-        files: files.map(f => ({ name: f.name, type: f.type, size: f.size })),
-        tags,
-        project_id: projectId,
-        driver_id: driverId,
-        period_start: periodStart,
-        period_end: periodEnd,
-      })
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('[analyze] insert failed', insertError.message)
-      return NextResponse.json({ error: friendlyDatabaseError(insertError.message) }, { status: 500 })
-    }
-
-    analysisId = analysis.id
-    const consentAI = formData.get('consentAI') === 'true'
-    if (consentAI) {
-      await admin.from('analyses')
-        .update({ consent_ai_at: new Date().toISOString(), progress_pct: 10, progress_stage: 'upload' })
-        .eq('id', analysis.id)
-    } else {
-      await admin.from('analyses')
-        .update({ progress_pct: 10, progress_stage: 'upload' })
-        .eq('id', analysis.id)
-    }
-
+  // Tudo daqui pra baixo roda DEPOIS da resposta ser enviada ao navegador —
+  // é assim que o front recebe o id na hora e consegue acompanhar o progresso real.
+  after(async () => {
     let parsedFiles: ParsedAIFile[] = []
-
     try {
-    parsedFiles = await Promise.all(files.map(parseFileForAI))
-    await admin.from('analyses')
-      .update({ progress_pct: 35, progress_stage: 'parse' })
-      .eq('id', analysis.id)
+      parsedFiles = await Promise.all(files.map(parseFileForAI))
+      await admin.from('analyses')
+        .update({ progress_pct: 35, progress_stage: 'parse' })
+        .eq('id', analysis.id)
 
-    if (analysisMode === 'local') {
-      const result = createLocalAnalysis(parsedFiles, context)
+      if (analysisMode === 'local') {
+        const result = createLocalAnalysis(parsedFiles, context)
+        const { error: updateError } = await admin
+          .from('analyses')
+          .update({ status: 'completed', result, progress_pct: 100, progress_stage: 'save', updated_at: new Date().toISOString() })
+          .eq('id', analysis.id)
+
+        if (updateError) throw new Error(`Erro ao salvar resultado da análise: ${updateError.message}`)
+
+        await dispatchAnalysisNotifications(admin, user.id, analysis.id, title || 'Análise sem título', result)
+        return
+      }
+
+      await admin.from('analyses')
+        .update({ progress_pct: 55, progress_stage: 'analyze' })
+        .eq('id', analysis.id)
+
+      const result = await analyzeData(parsedFiles, context)
+
+      await admin.from('analyses')
+        .update({ progress_pct: 90, progress_stage: 'save' })
+        .eq('id', analysis.id)
+
       const { error: updateError } = await admin
         .from('analyses')
         .update({ status: 'completed', result, progress_pct: 100, progress_stage: 'save', updated_at: new Date().toISOString() })
         .eq('id', analysis.id)
 
-      if (updateError) {
-        throw new Error(`Erro ao salvar resultado da análise: ${updateError.message}`)
-      }
+      if (updateError) throw new Error(`Erro ao salvar resultado da análise: ${updateError.message}`)
 
       await dispatchAnalysisNotifications(admin, user.id, analysis.id, title || 'Análise sem título', result)
-      return NextResponse.json({ id: analysis.id, status: 'completed', mode: 'local' })
-    }
+    } catch (err) {
+      const raw = getErrorMessage(err)
+      console.error('[analyze] failed', raw)
 
-    await admin.from('analyses')
-      .update({ progress_pct: 55, progress_stage: 'analyze' })
-      .eq('id', analysis.id)
+      if (parsedFiles.length > 0 && isNetworkAIError(raw)) {
+        const fallbackResult = createLocalAnalysis(parsedFiles, context, true)
+        const { error: fallbackUpdateError } = await admin
+          .from('analyses')
+          .update({
+            status: 'completed',
+            result: fallbackResult,
+            progress_pct: 100,
+            progress_stage: 'save',
+            error_message: 'A IA não respondeu, então uma análise básica foi gerada a partir da estrutura da planilha.',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', analysis.id)
 
-    const result = await analyzeData(parsedFiles, context)
+        if (!fallbackUpdateError) {
+          await dispatchAnalysisNotifications(admin, user.id, analysis.id, title || 'Análise sem título', fallbackResult)
+          return
+        }
+        console.error('[analyze] failed to save fallback result', fallbackUpdateError.message)
+      }
 
-    await admin.from('analyses')
-      .update({ progress_pct: 90, progress_stage: 'save' })
-      .eq('id', analysis.id)
-
-    const { error: updateError } = await admin
-      .from('analyses')
-      .update({ status: 'completed', result, progress_pct: 100, progress_stage: 'save', updated_at: new Date().toISOString() })
-      .eq('id', analysis.id)
-
-    if (updateError) {
-      throw new Error(`Erro ao salvar resultado da análise: ${updateError.message}`)
-    }
-
-    await dispatchAnalysisNotifications(admin, user.id, analysis.id, title || 'Análise sem título', result)
-
-    return NextResponse.json({ id: analysis.id, status: 'completed' })
-  } catch (err) {
-    const raw = getErrorMessage(err)
-    console.error('[analyze] failed', raw)
-
-    if (parsedFiles.length > 0 && isNetworkAIError(raw)) {
-      const fallbackResult = createLocalAnalysis(parsedFiles, context, true)
-      const { error: fallbackUpdateError } = await admin
+      const message = friendlyError(raw)
+      const { error: errorUpdateError } = await admin
         .from('analyses')
-        .update({ status: 'completed', result: fallbackResult, progress_pct: 100, progress_stage: 'save', updated_at: new Date().toISOString() })
+        .update({ status: 'error', error_message: message, updated_at: new Date().toISOString() })
         .eq('id', analysis.id)
 
-      if (fallbackUpdateError) {
-        console.error('[analyze] failed to save fallback result', fallbackUpdateError.message)
-      } else {
-        await dispatchAnalysisNotifications(admin, user.id, analysis.id, title || 'Análise sem título', fallbackResult)
-        return NextResponse.json({
-          id: analysis.id,
-          status: 'completed',
-          warning: 'A IA não respondeu, então uma análise básica foi gerada a partir da estrutura da planilha.',
-        })
+      if (errorUpdateError) {
+        console.error('[analyze] failed to save error status', errorUpdateError.message)
       }
     }
+  })
 
-    const message = friendlyError(raw)
-    const { error: errorUpdateError } = await admin
-      .from('analyses')
-      .update({ status: 'error', error_message: message, updated_at: new Date().toISOString() })
-      .eq('id', analysis.id)
-
-    if (errorUpdateError) {
-      console.error('[analyze] failed to save error status', errorUpdateError.message)
-    }
-
-    return NextResponse.json({ error: message }, { status: 500 })
-    }
-  } catch (outerErr) {
-    const msg = getErrorMessage(outerErr)
-    console.error('[analyze] outer error', msg)
-
-    if (admin && analysisId) {
-      try {
-        await admin
-          .from('analyses')
-          .update({ status: 'error', error_message: 'Erro inesperado ao processar a análise.', updated_at: new Date().toISOString() })
-          .eq('id', analysisId)
-      } catch { /* best-effort */ }
-    }
-
-    return NextResponse.json(
-      { error: friendlyError(msg) || 'Erro inesperado ao processar a análise. Tente novamente.' },
-      { status: 500 },
-    )
-  }
+  return NextResponse.json({ id: analysis.id, status: 'processing' })
 }
 
 function getErrorMessage(err: unknown): string {

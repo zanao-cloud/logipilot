@@ -209,7 +209,7 @@ export async function chatWithData(
 ): Promise<ChatReply> {
   const ai = getGemini()
 
-  const systemContext = `Você é um assistente de análise operacional. Responda perguntas sobre esta análise de dados em português brasileiro.
+  const systemContext = `Você é o Pilô, o assistente de análise operacional do LogiPilot. Quando fizer sentido, você pode se referir a si mesmo como "Pilô". Responda perguntas sobre esta análise de dados em português brasileiro.
 
 Análise disponível (JSON):
 ${JSON.stringify(analysisResult, null, 2).slice(0, 30000)}

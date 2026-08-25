@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Brain, Check } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Check } from 'lucide-react'
+import Image from 'next/image'
 import * as Progress from '@radix-ui/react-progress'
 import { cn as cnUtil } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -50,13 +51,21 @@ function formatEta(seconds: number): string {
 export function AnalysisProcessingLoader({
   stage,
   analysisId,
+  onDone,
 }: {
   stage: StageId
   analysisId?: string | null
+  onDone?: (info: { status: 'completed' | 'error'; errorMessage?: string | null }) => void
 }) {
   const [pct, setPct] = useState<number>(0)
   const [serverStage, setServerStage] = useState<StageId | null>(null)
   const [times, setTimes] = useState<{ start: number; now: number } | null>(null)
+  const onDoneRef = useRef(onDone)
+  const doneRef = useRef(false)
+
+  useEffect(() => {
+    onDoneRef.current = onDone
+  }, [onDone])
 
   useEffect(() => {
     const tick = setInterval(() => {
@@ -76,14 +85,16 @@ export function AnalysisProcessingLoader({
     const poll = async () => {
       const { data } = await supabase
         .from('analyses')
-        .select('progress_pct, progress_stage, status')
+        .select('progress_pct, progress_stage, status, error_message')
         .eq('id', analysisId)
         .maybeSingle()
       if (cancelled || !data) return
       if (typeof data.progress_pct === 'number') setPct(data.progress_pct)
       if (data.progress_stage) setServerStage(data.progress_stage as StageId)
-      if (data.status === 'completed' || data.status === 'error') {
+      if ((data.status === 'completed' || data.status === 'error') && !doneRef.current) {
+        doneRef.current = true
         clearInterval(timer)
+        onDoneRef.current?.({ status: data.status, errorMessage: data.error_message })
       }
     }
     poll()
@@ -102,14 +113,14 @@ export function AnalysisProcessingLoader({
       <div className="relative w-24 h-24">
         <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
         <div className="absolute inset-0 rounded-full border-4 border-t-[#1E3A5F] border-r-emerald-500 animate-spin" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Brain className="w-7 h-7 text-[#1E3A5F]" />
+        <div className="absolute inset-2 rounded-full overflow-hidden">
+          <Image src="/pilo.png" alt="Pilô" fill sizes="80px" className="object-cover" />
         </div>
       </div>
 
       <div className="text-center">
         <h3 className="text-lg font-semibold text-slate-800">Analisando seus dados</h3>
-        <p className="text-slate-500 text-sm mt-1">A IA está processando todas as informações...</p>
+        <p className="text-slate-500 text-sm mt-1">O Pilô está processando todas as informações...</p>
       </div>
 
       <div className="w-full max-w-sm">
