@@ -6,7 +6,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { DEMO_CREDENTIALS, DEMO_PASSWORD } from '@/lib/auth/demo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Building2, Users, Truck, Eye, EyeOff } from 'lucide-react'
@@ -15,13 +14,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // Demo: entra sempre na conta de demonstração, sem checar o que foi digitado.
-    await supabase.auth.signInWithPassword({ email: DEMO_CREDENTIALS.gestor, password: DEMO_PASSWORD })
+    setError('')
+    setLoading(true)
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) {
+      setError('E-mail ou senha incorretos.')
+      setLoading(false)
+      return
+    }
     router.push('/dashboard')
     router.refresh()
   }
@@ -47,6 +54,11 @@ export default function LoginPage() {
 
         <div className="px-8 py-8">
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {error && (
+              <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
             <Input
               label="E-mail"
               type="email"
@@ -94,8 +106,8 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Entrar
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
 

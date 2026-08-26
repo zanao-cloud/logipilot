@@ -6,20 +6,27 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { DEMO_CREDENTIALS, DEMO_PASSWORD } from '@/lib/auth/demo'
 import { Truck, Eye, EyeOff } from 'lucide-react'
 
 export default function MotoristaLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // Demo: entra sempre na conta de demonstração, sem checar o que foi digitado.
-    await supabase.auth.signInWithPassword({ email: DEMO_CREDENTIALS.motorista, password: DEMO_PASSWORD })
+    setError('')
+    setLoading(true)
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) {
+      setError('E-mail ou senha incorretos.')
+      setLoading(false)
+      return
+    }
     router.push('/motorista')
     router.refresh()
   }
@@ -50,6 +57,11 @@ export default function MotoristaLoginPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mail</label>
             <input
@@ -85,9 +97,10 @@ export default function MotoristaLoginPage() {
 
           <button
             type="submit"
-            className="w-full py-3.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
+            disabled={loading}
+            className="w-full py-3.5 rounded-xl bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
           >
-            Entrar
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 

@@ -6,7 +6,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { DEMO_CREDENTIALS, DEMO_PASSWORD } from '@/lib/auth/demo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Users, ArrowLeft } from 'lucide-react'
@@ -14,13 +13,21 @@ import { Users, ArrowLeft } from 'lucide-react'
 export default function OperadorLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // Demo: entra sempre na conta de demonstração, sem checar o que foi digitado.
-    await supabase.auth.signInWithPassword({ email: DEMO_CREDENTIALS.operador, password: DEMO_PASSWORD })
+    setError('')
+    setLoading(true)
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) {
+      setError('E-mail ou senha incorretos.')
+      setLoading(false)
+      return
+    }
     router.push('/operador')
     router.refresh()
   }
@@ -52,6 +59,11 @@ export default function OperadorLoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
             <Input
               label="E-mail"
               type="email"
@@ -73,8 +85,9 @@ export default function OperadorLoginPage() {
               type="submit"
               className="w-full"
               size="lg"
+              disabled={loading}
             >
-              Entrar como Operador
+              {loading ? 'Entrando...' : 'Entrar como Operador'}
             </Button>
           </form>
 
